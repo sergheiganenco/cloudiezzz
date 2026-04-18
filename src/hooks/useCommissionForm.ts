@@ -273,6 +273,25 @@ export function useCommissionForm() {
         if (data.orderNumber) setOrderNo(data.orderNumber);
         if (data.accessToken) setAccessToken(data.accessToken);
         if (data.orderId) setFormData((prev) => ({ ...prev, _orderId: data.orderId }));
+
+        // Redirect to payment checkout
+        try {
+          const checkoutRes = await fetch('/api/checkout', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ accessToken: data.accessToken }),
+          });
+          const checkoutData = await checkoutRes.json();
+          if (checkoutData.url) {
+            // Stripe checkout — redirect to payment page
+            window.location.href = checkoutData.url;
+            return;
+          }
+        } catch {
+          // Checkout failed — still show completion (order was created)
+        }
+
+        // If no payment URL (dev mode or Stripe not configured), show completion
         setStep(7);
       } else {
         setErrors([data.error || 'Something went wrong. Please try again.']);
