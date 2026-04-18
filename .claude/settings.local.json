@@ -47,7 +47,13 @@
       "Bash(gh repo *)",
       "Bash(git add *)",
       "Bash(git rm *)",
-      "Bash(git commit -m ' *)"
+      "Bash(git commit -m ' *)",
+      "Bash(git push *)",
+      "Bash(node -e \"console.log\\(require\\('crypto'\\).randomBytes\\(32\\).toString\\('base64'\\)\\)\")",
+      "Bash(export TURSO_DATABASE_URL=\"libsql://cloudiezzz-sergheiganenco.aws-us-east-1.turso.io\")",
+      "Bash(export TURSO_AUTH_TOKEN=\"eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJhIjoicnciLCJpYXQiOjE3NzY1MTk3MTEsImlkIjoiMDE5ZGEwZDMtMDcwMS03YWRkLTkyM2UtOTAwNGJkYTY2MjA4IiwicmlkIjoiZjlkYjA2ZWMtM2EwOS00YzEzLWE4MzEtYzBmODU3MmM1OTU5In0.F2RSfmz-3NiInF1xxis3ns16cGLwPbdad-o1CqzJTG6IyNZ_3hNbPrbIrLntSnBnm27jOexjb4CRwNbeMNQUDQ\")",
+      "Bash(export DATABASE_URL=\"libsql://cloudiezzz-sergheiganenco.aws-us-east-1.turso.io\")",
+      "Bash(node -e \"const fs = require\\('fs'\\); const sql = fs.readFileSync\\('turso_migration.sql','utf8'\\); console.log\\('len:', sql.length\\); console.log\\('has semicolons:', sql.includes\\(';'\\)\\); console.log\\('first 100:', JSON.stringify\\(sql.substring\\(0,100\\)\\)\\);\")"
     ]
   }
 }
