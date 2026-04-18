@@ -421,15 +421,22 @@ export default function AdminDashboard() {
                   </td>
                   <td>{new Date(order.createdAt).toLocaleDateString()}</td>
                   <td>
-                    <select
-                      value={order.status}
-                      onChange={(e) => updateStatus(order.id, e.target.value)}
-                      className="admin-select"
-                    >
-                      {STATUS_OPTIONS.map((st) => (
-                        <option key={st} value={st}>{st.replace('_', ' ')}</option>
-                      ))}
-                    </select>
+                    {(WORKFLOW_STEPS[order.status] || []).slice(0, 1).map((a) => (
+                      <button
+                        key={a.next}
+                        onClick={(e) => { e.stopPropagation(); updateStatus(order.id, a.next); }}
+                        style={{
+                          padding: '5px 12px', background: a.color, color: '#fff',
+                          border: 'none', borderRadius: 8, fontSize: 12, fontWeight: 600,
+                          cursor: 'pointer', fontFamily: 'Fredoka, sans-serif',
+                        }}
+                      >
+                        {a.icon} {a.label}
+                      </button>
+                    ))}
+                    {(!WORKFLOW_STEPS[order.status] || WORKFLOW_STEPS[order.status].length === 0) && (
+                      <span style={{ fontSize: 12, color: '#9ca3af' }}>—</span>
+                    )}
                   </td>
                 </tr>
               ))}
@@ -521,6 +528,20 @@ export default function AdminDashboard() {
                       </span>
                     )}
                   </div>
+                </div>
+              </div>
+              {/* Workflow Actions */}
+              <div style={{ gridColumn: 'span 2' }}>
+                <h3 className="detail-title">Workflow</h3>
+                <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' as const }}>
+                  <WorkflowActions
+                    status={orderDetail.status}
+                    paymentStatus={orderDetail.paymentStatus}
+                    onAction={(newStatus) => {
+                      updateStatus(orderDetail.id, newStatus);
+                      refreshOrderDetail();
+                    }}
+                  />
                 </div>
               </div>
               <div style={{ gridColumn: 'span 2' }}>
@@ -691,6 +712,119 @@ export default function AdminDashboard() {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+/* ===== Workflow Action Buttons ===== */
+const WORKFLOW_STEPS: Record<string, { label: string; next: string; color: string; icon: string }[]> = {
+  pending: [
+    { label: 'Mark as Paid', next: 'paid', color: '#3b82f6', icon: '💳' },
+  ],
+  paid: [
+    { label: 'Start Production', next: 'in_progress', color: '#8b5cf6', icon: '🎵' },
+  ],
+  in_progress: [
+    { label: 'Send for Review', next: 'review', color: '#ec4899', icon: '👀' },
+  ],
+  review: [
+    { label: 'Mark Complete', next: 'completed', color: '#10b981', icon: '✅' },
+    { label: 'Needs Revision', next: 'revision', color: '#f97316', icon: '✏️' },
+  ],
+  revision: [
+    { label: 'Send for Review', next: 'review', color: '#ec4899', icon: '👀' },
+  ],
+  completed: [
+    { label: 'Deliver to Customer', next: 'delivered', color: '#059669', icon: '📦' },
+  ],
+  delivered: [],
+  refunded: [],
+  cancelled: [],
+};
+
+function WorkflowActions({ status, paymentStatus, onAction }: {
+  status: string;
+  paymentStatus: string;
+  onAction: (newStatus: string) => void;
+}) {
+  const actions = WORKFLOW_STEPS[status] || [];
+  const canRefund = !['refunded', 'cancelled', 'pending'].includes(status);
+  const canCancel = !['refunded', 'cancelled', 'delivered'].includes(status);
+
+  const btnStyle = (color: string) => ({
+    padding: '10px 20px',
+    background: color,
+    color: '#fff',
+    border: 'none',
+    borderRadius: 12,
+    fontSize: 14,
+    fontWeight: 700 as const,
+    cursor: 'pointer',
+    fontFamily: 'Fredoka, sans-serif',
+    display: 'inline-flex',
+    alignItems: 'center' as const,
+    gap: 8,
+    boxShadow: `0 3px 0 ${color}88`,
+    transition: 'transform .15s',
+  });
+
+  const smallBtnStyle = {
+    padding: '6px 14px',
+    background: 'transparent',
+    color: '#6b7280',
+    border: '2px solid #e5e7eb',
+    borderRadius: 10,
+    fontSize: 12,
+    fontWeight: 600 as const,
+    cursor: 'pointer',
+    fontFamily: 'Fredoka, sans-serif',
+  };
+
+  if (status === 'delivered') {
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+        <span style={{ fontSize: 14, color: '#059669', fontWeight: 600 }}>✅ Delivered — order complete!</span>
+        {canRefund && (
+          <button onClick={() => { if (confirm('Issue a refund?')) onAction('refunded'); }} style={smallBtnStyle}>
+            Refund
+          </button>
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+      {/* Main workflow buttons */}
+      {actions.map((a) => (
+        <button
+          key={a.next}
+          onClick={() => onAction(a.next)}
+          style={btnStyle(a.color)}
+          onMouseOver={(e) => (e.currentTarget.style.transform = 'translateY(-2px)')}
+          onMouseOut={(e) => (e.currentTarget.style.transform = 'none')}
+        >
+          {a.icon} {a.label}
+        </button>
+      ))}
+
+      {/* Secondary actions */}
+      {canCancel && (
+        <button onClick={() => { if (confirm('Cancel this order?')) onAction('cancelled'); }} style={smallBtnStyle}>
+          Cancel Order
+        </button>
+      )}
+      {canRefund && (
+        <button onClick={() => { if (confirm('Issue a refund?')) onAction('refunded'); }} style={smallBtnStyle}>
+          Refund
+        </button>
+      )}
+
+      {/* Current status indicator */}
+      <span style={{ fontSize: 12, color: '#9ca3af', marginLeft: 'auto' }}>
+        Current: {status.replace('_', ' ')}
+        {paymentStatus === 'unpaid' && status === 'pending' && ' (awaiting payment)'}
+      </span>
     </div>
   );
 }
