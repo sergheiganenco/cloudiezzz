@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useCallback, useEffect } from 'react';
+import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import type { CommissionFormData } from '@/lib/types';
 import {
   PACKAGES,
@@ -100,6 +100,24 @@ export function useCommissionForm() {
       saveDraft(step, formData);
     }
   }, [step, formData]);
+
+  // Debounced lead capture — fire when email looks valid (steps 1-6)
+  const lastSavedLeadEmail = useRef('');
+  useEffect(() => {
+    const email = formData.buyer_email?.trim();
+    if (!email || !email.includes('@') || !email.includes('.')) return;
+    if (step < 1 || step >= 7) return;
+    if (email === lastSavedLeadEmail.current) return;
+    const timer = setTimeout(() => {
+      lastSavedLeadEmail.current = email;
+      fetch('/api/leads', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, name: formData.buyer_name, phone: formData.buyer_phone, formData, formStep: step }),
+      }).catch(() => {});
+    }, 3000);
+    return () => clearTimeout(timer);
+  }, [formData.buyer_email, formData.buyer_name, formData.buyer_phone, step]);
   const [couponFeedback, setCouponFeedback] = useState<{
     type: 'success' | 'error' | 'hint' | '';
     message: string;

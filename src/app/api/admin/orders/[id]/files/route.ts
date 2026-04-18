@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { getSessionUser, requireRole } from '@/lib/auth';
-import { writeFile, mkdir, unlink } from 'fs/promises';
-import path from 'path';
 
 const ALLOWED_FILE_TYPES = ['draft', 'final', 'stem', 'lyric_video', 'lyric_card'];
 
@@ -66,23 +64,22 @@ export async function POST(
     return NextResponse.json({ error: `Invalid fileType. Must be one of: ${ALLOWED_FILE_TYPES.join(', ')}` }, { status: 400 });
   }
 
-  const bytes = await file.arrayBuffer();
-  const buffer = Buffer.from(bytes);
+  if (file.size > 5 * 1024 * 1024) {
+    return NextResponse.json({ error: 'File too large (max 5MB)' }, { status: 400 });
+  }
 
-  const uploadDir = path.join(process.cwd(), 'public', 'uploads', id);
-  await mkdir(uploadDir, { recursive: true });
+  const buffer = Buffer.from(await file.arrayBuffer());
+  const base64 = buffer.toString('base64');
+  const mimeType = file.type || 'application/octet-stream';
+  const dataUrl = `data:${mimeType};base64,${base64}`;
 
   const fileName = file.name;
-  const filePath = path.join(uploadDir, fileName);
-  await writeFile(filePath, buffer);
-
-  const fileUrl = `/uploads/${id}/${fileName}`;
 
   const orderFile = await prisma.orderFile.create({
     data: {
       orderId: id,
       fileName,
-      fileUrl,
+      fileUrl: dataUrl,
       fileType,
       fileSize: buffer.length,
     },
@@ -113,14 +110,6 @@ export async function DELETE(
 
   if (!orderFile) {
     return NextResponse.json({ error: 'File not found' }, { status: 404 });
-  }
-
-  // Delete from filesystem
-  try {
-    const filePath = path.join(process.cwd(), 'public', orderFile.fileUrl);
-    await unlink(filePath);
-  } catch {
-    // File may already be deleted from disk — continue
   }
 
   // Delete from database

@@ -223,6 +223,25 @@ model Referral {
   createdAt      DateTime @default(now())
 }
 
+// ─── Leads (abandoned form captures) ────────────────────────────────
+model Lead {
+  id            String   @id @default(cuid())
+  email         String   @unique
+  name          String?
+  phone         String?
+  formData      String   // JSON of partial form data
+  formStep      Int      @default(1)
+  status        String   @default("active") // active | converted | unsubscribed
+  remindersSent Int      @default(0)
+  lastReminderAt DateTime?
+  convertedAt   DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([status])
+  @@index([email])
+}
+
 // ─── Feature Requests ───────────────────────────────────────────────
 model FeatureRequest {
   id        String   @id @default(cuid())

@@ -272,6 +272,74 @@ export async function sendCreatorAssignment(data: {
   });
 }
 
+// ─── Lead welcome ─────────────────────────────────────────────────
+export async function sendLeadWelcome(lead: {
+  email: string;
+  name?: string;
+  formStep: number;
+}) {
+  const formUrl = `${APP_URL}/?resume=true`;
+  await sendEmail({
+    to: lead.email,
+    subject: 'Your Cloudiezzz song is waiting to be created!',
+    html: wrap(`
+      <h2 style="color:#2a2418;font-size:20px;margin:0 0 16px;">Hey${lead.name ? ` ${lead.name}` : ''}!</h2>
+      <p style="color:#5d5346;font-size:15px;line-height:1.6;">
+        We noticed you started creating a custom song but didn't finish. No worries — your progress is saved!
+        You were on step ${lead.formStep} of 6.
+      </p>
+      <div style="text-align:center;margin:24px 0;">
+        <a href="${formUrl}" style="display:inline-block;padding:14px 36px;background:#ec4899;color:#fff;border-radius:12px;text-decoration:none;font-weight:700;font-size:16px;">
+          Continue Your Song ✿
+        </a>
+      </div>
+      <p style="color:#8b7e6e;font-size:13px;">
+        Use code CLOUD25 for 25% off — it's already saved for you.
+      </p>
+    `),
+  });
+}
+
+// ─── Lead reminder ────────────────────────────────────────────────
+export async function sendLeadReminder(lead: {
+  email: string;
+  name?: string;
+  formStep: number;
+  reminderNumber: number;
+}) {
+  const formUrl = `${APP_URL}/?resume=true`;
+  const subjects = [
+    'Your custom song is almost ready to start!',
+    'Still thinking? Your song details are saved ✿',
+    'Don\'t miss out — finish your song order',
+    'Last chance to complete your song commission',
+    'We\'re holding your spot — complete your song!',
+  ];
+  const subject = subjects[Math.min(lead.reminderNumber, subjects.length - 1)];
+
+  await sendEmail({
+    to: lead.email,
+    subject,
+    html: wrap(`
+      <h2 style="color:#2a2418;font-size:20px;margin:0 0 16px;">Hey${lead.name ? ` ${lead.name}` : ''}!</h2>
+      <p style="color:#5d5346;font-size:15px;line-height:1.6;">
+        Your custom song order is still waiting! You got to step ${lead.formStep} of 6 — just a few more details and we'll start creating your masterpiece.
+      </p>
+      <div style="text-align:center;margin:24px 0;">
+        <a href="${formUrl}" style="display:inline-block;padding:14px 36px;background:#ec4899;color:#fff;border-radius:12px;text-decoration:none;font-weight:700;font-size:16px;">
+          Continue Where You Left Off ✿
+        </a>
+      </div>
+      <p style="color:#8b7e6e;font-size:13px;">
+        Code CLOUD25 gives you 25% off. Don't let this song go unwritten!
+      </p>
+      <p style="color:#b5aa9a;font-size:11px;margin-top:16px;">
+        <a href="${APP_URL}/unsubscribe?email=${encodeURIComponent(lead.email)}" style="color:#b5aa9a;">Unsubscribe from reminders</a>
+      </p>
+    `),
+  });
+}
+
 // ─── Delivery with gift link ────────────────────────────────────────
 export async function sendDeliveryEmail(order: {
   buyerEmail: string;

@@ -68,6 +68,9 @@ export default function AdminDashboard() {
   const [creators, setCreators] = useState<{ id: string; name: string; email: string }[]>([]);
   const [uploadFileType, setUploadFileType] = useState('draft');
   const [uploading, setUploading] = useState(false);
+  const [showLeads, setShowLeads] = useState(false);
+  const [leads, setLeads] = useState<any[]>([]);
+  const [leadsLoading, setLeadsLoading] = useState(false);
 
   useEffect(() => {
     fetch('/api/auth/me')
@@ -118,6 +121,16 @@ export default function AdminDashboard() {
       .then((d) => setCreators(d.creators || []))
       .catch(console.error);
   }, [user]);
+
+  useEffect(() => {
+    if (!user || !showLeads) return;
+    setLeadsLoading(true);
+    fetch('/api/leads')
+      .then((r) => r.json())
+      .then((d) => setLeads(d.leads || []))
+      .catch(console.error)
+      .finally(() => setLeadsLoading(false));
+  }, [user, showLeads]);
 
   const refreshOrderDetail = useCallback(() => {
     if (!selectedOrder) return;
@@ -274,8 +287,84 @@ export default function AdminDashboard() {
         </div>
       )}
 
+      {/* Tab Toggle */}
+      <div style={{ display: 'flex', gap: 10, padding: '0 40px 16px' }}>
+        <button
+          onClick={() => setShowLeads(false)}
+          style={{
+            padding: '8px 20px',
+            borderRadius: 8,
+            border: 'none',
+            fontWeight: 600,
+            fontSize: 14,
+            cursor: 'pointer',
+            background: !showLeads ? '#7c3aed' : '#f3f4f6',
+            color: !showLeads ? '#fff' : '#6b7280',
+          }}
+        >
+          Orders
+        </button>
+        <button
+          onClick={() => setShowLeads(true)}
+          style={{
+            padding: '8px 20px',
+            borderRadius: 8,
+            border: 'none',
+            fontWeight: 600,
+            fontSize: 14,
+            cursor: 'pointer',
+            background: showLeads ? '#7c3aed' : '#f3f4f6',
+            color: showLeads ? '#fff' : '#6b7280',
+          }}
+        >
+          Leads
+        </button>
+      </div>
+
+      {/* Leads Table */}
+      {showLeads && (
+        <div className="admin-table-wrap">
+          {leadsLoading ? (
+            <p className="admin-loading">Loading leads...</p>
+          ) : leads.length === 0 ? (
+            <p className="admin-empty">No leads captured yet.</p>
+          ) : (
+            <table className="admin-table">
+              <thead>
+                <tr>
+                  <th>Email</th>
+                  <th>Name</th>
+                  <th>Phone</th>
+                  <th>Step</th>
+                  <th>Reminders</th>
+                  <th>Last Activity</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {leads.map((lead: any) => (
+                  <tr key={lead.id || lead.email}>
+                    <td>{lead.email}</td>
+                    <td>{lead.name || '—'}</td>
+                    <td>{lead.phone || '—'}</td>
+                    <td>{lead.formStep ?? lead.step ?? '—'}</td>
+                    <td>{lead.remindersSent ?? 0}</td>
+                    <td>{lead.lastActivity ? new Date(lead.lastActivity).toLocaleString() : lead.updatedAt ? new Date(lead.updatedAt).toLocaleString() : '—'}</td>
+                    <td>
+                      <span className="status-badge" style={{ background: lead.status === 'converted' ? '#10b981' : lead.status === 'abandoned' ? '#f59e0b' : '#3b82f6' }}>
+                        {lead.status || 'active'}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+      )}
+
       {/* Filters */}
-      <div className="admin-filters">
+      {!showLeads && <div className="admin-filters">
         {['all', ...STATUS_OPTIONS].map((st) => (
           <button
             key={st}
@@ -285,10 +374,10 @@ export default function AdminDashboard() {
             {st === 'all' ? 'All' : st.replace('_', ' ')}
           </button>
         ))}
-      </div>
+      </div>}
 
       {/* Orders Table */}
-      <div className="admin-table-wrap">
+      {!showLeads && <div className="admin-table-wrap">
         {loading ? (
           <p className="admin-loading">Loading orders...</p>
         ) : orders.length === 0 ? (
@@ -355,7 +444,7 @@ export default function AdminDashboard() {
             <button disabled={page >= totalPages} onClick={() => setPage(page + 1)} className="page-btn">Next</button>
           </div>
         )}
-      </div>
+      </div>}
 
       {/* Order Detail Modal */}
       {selectedOrder && orderDetail && (
