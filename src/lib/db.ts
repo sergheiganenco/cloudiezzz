@@ -1,5 +1,4 @@
 import { PrismaLibSql } from '@prisma/adapter-libsql';
-import { createClient } from '@libsql/client';
 
 let _prisma: any;
 
@@ -14,8 +13,7 @@ function createPrismaClient() {
 
   // If it's a libsql/turso URL, use the libSQL adapter
   if (url.startsWith('libsql://') || url.startsWith('https://')) {
-    const client = createClient({ url, authToken });
-    const adapter = new PrismaLibSql(client);
+    const adapter = new PrismaLibSql({ url, authToken });
     return new PrismaClient({ adapter });
   }
 
