@@ -166,6 +166,16 @@ export async function POST(request: NextRequest): Promise<NextResponse<Commissio
       data: { orderCount: { increment: 1 } },
     });
 
+    // Convert lead to customer (mark as converted, stop reminders)
+    try {
+      await prisma.lead.update({
+        where: { email },
+        data: { status: 'converted', convertedAt: new Date() },
+      });
+    } catch {
+      // Lead may not exist — that's fine
+    }
+
     // Create initial status record
     await prisma.orderStatusUpdate.create({
       data: {
