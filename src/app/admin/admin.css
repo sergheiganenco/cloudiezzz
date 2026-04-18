@@ -1,0 +1,412 @@
+/* Hide main site UI on admin pages */
+.site-nav,
+.botanical,
+.chat-widget,
+.voice-toggle,
+.click-flower,
+.b1, .b2, .b3, .b4, .b5 {
+  display: none !important;
+}
+
+/* ===== Admin Layout ===== */
+.admin-page {
+  min-height: 100vh;
+  background: var(--yellow);
+  color: var(--ink);
+  font-family: 'Fredoka', sans-serif;
+  font-size: 16px;
+}
+
+.admin-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 40px;
+  background: var(--yellow-soft);
+  border-bottom: 2px solid var(--line);
+}
+
+.admin-header .brand-mark {
+  font-size: 32px;
+}
+
+.admin-badge {
+  margin-left: 12px;
+  background: var(--pink);
+  color: #fff;
+  padding: 4px 14px;
+  border-radius: 99px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+
+.admin-header-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.admin-user {
+  font-size: 16px;
+  color: var(--ink-mute);
+  font-weight: 500;
+}
+
+.admin-logout {
+  font-family: 'Fredoka', sans-serif;
+  padding: 10px 22px;
+  border: 2px solid var(--line);
+  border-radius: 99px;
+  background: transparent;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink-soft);
+  transition: all .2s;
+}
+.admin-logout:hover {
+  background: var(--yellow-deep);
+  color: var(--ink);
+}
+
+/* ===== Stats Grid ===== */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 18px;
+  padding: 28px 40px;
+}
+
+.stat-card {
+  background: var(--yellow-soft);
+  border: 2px solid var(--line);
+  border-radius: 18px;
+  padding: 24px 20px;
+  box-shadow: 4px 4px 0 var(--line-soft);
+}
+
+.stat-card.wide {
+  grid-column: span 2;
+}
+
+.stat-value {
+  font-family: 'Fredoka', sans-serif;
+  font-size: 36px;
+  font-weight: 700;
+  color: var(--ink);
+  line-height: 1;
+}
+
+.stat-label {
+  font-size: 15px;
+  color: var(--ink-mute);
+  margin-top: 6px;
+  font-weight: 500;
+}
+
+/* ===== Filters ===== */
+.admin-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 0 40px 20px;
+}
+
+.filter-btn {
+  font-family: 'Fredoka', sans-serif;
+  padding: 10px 20px;
+  border-radius: 99px;
+  border: 2px solid var(--line);
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  text-transform: capitalize;
+  background: transparent;
+  color: var(--ink-soft);
+  transition: all .25s cubic-bezier(.34, 1.56, .64, 1);
+}
+.filter-btn:hover {
+  background: var(--yellow-deep);
+  color: var(--ink);
+  transform: translateY(-2px);
+}
+.filter-btn.active {
+  background: var(--ink);
+  color: var(--yellow);
+  border-color: var(--ink);
+  box-shadow: 0 3px 0 rgba(66, 32, 6, .3);
+  transform: translateY(-1px);
+}
+
+/* ===== Table ===== */
+.admin-table-wrap {
+  padding: 0 40px 40px;
+  overflow-x: auto;
+}
+
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--yellow-soft);
+  border: 2px solid var(--ink);
+  border-radius: 18px;
+  overflow: hidden;
+  box-shadow: 6px 6px 0 var(--line-soft);
+}
+
+.admin-table th {
+  text-align: left;
+  padding: 16px 18px;
+  font-size: 13px;
+  color: var(--ink-mute);
+  border-bottom: 2px solid var(--line);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .12em;
+}
+
+.admin-table tr {
+  border-bottom: 1px solid var(--line-soft);
+  transition: background .15s;
+}
+.admin-table tbody tr:hover {
+  background: var(--yellow-mid);
+}
+.admin-table tr:last-child {
+  border-bottom: none;
+}
+
+.admin-table td {
+  padding: 16px 18px;
+  font-size: 15px;
+  vertical-align: middle;
+  font-weight: 500;
+}
+
+.order-link {
+  background: none;
+  border: none;
+  color: var(--pink);
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 15px;
+  font-family: 'Fredoka', sans-serif;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.order-link:hover {
+  color: var(--pink-deep);
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 5px 14px;
+  border-radius: 99px;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: capitalize;
+  letter-spacing: .04em;
+  white-space: nowrap;
+}
+
+.admin-select {
+  font-family: 'Fredoka', sans-serif;
+  padding: 8px 14px;
+  border-radius: 12px;
+  border: 2px solid var(--line);
+  font-size: 14px;
+  font-weight: 500;
+  background: var(--yellow-mid);
+  color: var(--ink);
+  cursor: pointer;
+  transition: border-color .2s;
+}
+.admin-select:hover {
+  border-color: var(--pink);
+}
+
+/* ===== Pagination ===== */
+.admin-pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 20px;
+  padding: 20px 0;
+}
+
+.page-btn {
+  font-family: 'Fredoka', sans-serif;
+  padding: 10px 22px;
+  border: 2px solid var(--line);
+  border-radius: 99px;
+  background: transparent;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink-soft);
+  transition: all .2s;
+}
+.page-btn:hover:not(:disabled) {
+  background: var(--yellow-deep);
+  color: var(--ink);
+}
+.page-btn:disabled {
+  opacity: .3;
+  cursor: not-allowed;
+}
+
+.page-info {
+  font-size: 15px;
+  color: var(--ink-mute);
+  font-weight: 500;
+}
+
+/* ===== Modal ===== */
+.admin-modal {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(66, 32, 6, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 24px;
+}
+
+.admin-modal-content {
+  background: var(--yellow-soft);
+  border: 2px solid var(--ink);
+  border-radius: 22px;
+  padding: 40px;
+  max-width: 860px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  position: relative;
+  box-shadow: 8px 8px 0 var(--ink), var(--shadow);
+}
+
+.modal-close {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  background: none;
+  border: 2px solid var(--line);
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  cursor: pointer;
+  color: var(--ink-mute);
+  font-family: 'Fredoka', sans-serif;
+  font-weight: 700;
+  transition: all .2s;
+}
+.modal-close:hover {
+  background: var(--yellow-deep);
+  color: var(--ink);
+}
+
+.modal-title {
+  font-family: 'Modak', cursive;
+  font-size: 32px;
+  margin: 0 0 28px;
+  -webkit-text-stroke: 1.5px var(--ink);
+  text-shadow: 3px 3px 0 var(--ink);
+  color: #fff;
+}
+.modal-title em {
+  font-style: normal;
+  color: var(--pink);
+  -webkit-text-stroke: 1.5px var(--ink);
+}
+
+.detail-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+
+.detail-section {
+  background: var(--yellow-mid);
+  border: 2px solid var(--line);
+  border-radius: 14px;
+  padding: 20px;
+}
+
+.detail-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--pink);
+  text-transform: uppercase;
+  letter-spacing: .12em;
+  margin-bottom: 10px;
+}
+
+.detail-body {
+  font-size: 15px;
+  color: var(--ink-soft);
+  line-height: 1.7;
+  font-weight: 500;
+}
+.detail-body p {
+  margin-bottom: 6px;
+}
+.detail-body strong {
+  color: var(--ink);
+  font-weight: 700;
+}
+
+.admin-loading {
+  text-align: center;
+  padding: 48px;
+  color: var(--ink-mute);
+  font-weight: 500;
+  font-size: 16px;
+}
+
+.admin-empty {
+  text-align: center;
+  padding: 48px;
+  font-family: 'Dancing Script', cursive;
+  font-size: 22px;
+  color: var(--ink-mute);
+  font-weight: 700;
+}
+
+/* Filter count badge */
+.filter-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 6px;
+  border-radius: 99px;
+  background: var(--pink);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  margin-left: 6px;
+}
+.filter-btn.active .filter-count {
+  background: var(--yellow);
+  color: var(--ink);
+}
+
+@media (max-width: 768px) {
+  .admin-header { padding: 14px 20px }
+  .stats-grid { padding: 20px; gap: 14px; grid-template-columns: repeat(2, 1fr) }
+  .stat-card.wide { grid-column: span 2 }
+  .admin-filters { padding: 0 20px 16px }
+  .admin-table-wrap { padding: 0 20px 20px }
+  .admin-table td, .admin-table th { padding: 12px 14px }
+  .detail-grid { grid-template-columns: 1fr }
+  .admin-modal-content { padding: 28px 20px }
+}

@@ -1,0 +1,234 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+// ─── Admin & Creator Users ──────────────────────────────────────────
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  name          String
+  passwordHash  String
+  role          String    @default("admin") // admin | creator
+  avatarUrl     String?
+  bio           String?
+  specialties   String?   // comma-separated genres for creators
+  isActive      Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  assignedOrders Order[]  @relation("AssignedCreator")
+  statusUpdates  OrderStatusUpdate[]
+  messages       OrderMessage[] @relation("SentMessages")
+}
+
+// ─── Customer (no login required) ───────────────────────────────────
+model Customer {
+  id         String   @id @default(cuid())
+  email      String   @unique
+  name       String
+  phone      String?
+  orderCount Int      @default(0)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  orders  Order[]
+  reviews Review[]
+}
+
+// ─── Orders ─────────────────────────────────────────────────────────
+model Order {
+  id            String   @id @default(cuid())
+  orderNumber   String   @unique // e.g., CLZ-20260414-A3K9
+  accessToken   String   @unique @default(cuid()) // magic link token
+  status        String   @default("pending") // pending | paid | in_progress | review | revision | completed | delivered | refunded | cancelled
+
+  // Stripe
+  stripeSessionId  String?
+  stripePaymentId  String?
+  paymentStatus    String   @default("unpaid") // unpaid | paid | refunded
+
+  // Package & pricing
+  packageId     String
+  packagePrice  Int      // in cents
+  addons        String   @default("[]")  // JSON array of addon IDs
+  addonTotal    Int      @default(0)     // in cents
+  rushFee       Int      @default(0)     // in cents
+  couponCode    String?
+  discountPercent Float  @default(0)
+  discountAmount  Int    @default(0)     // in cents
+  totalPrice    Int      // in cents
+
+  // Buyer info
+  buyerName     String
+  buyerEmail    String
+  buyerPhone    String?
+  dueDate       String?
+
+  // Recipient
+  recName       String?
+  recAge        String?
+  relationship  String?
+  occasion      String?
+  othersMentioned String?
+
+  // Story
+  howMet        String?
+  memories      String?
+  loveAbout     String?
+  feeling       String?
+  oneLine       String?
+  avoid         String?
+
+  // Sound
+  mood          String?
+  genres        String?  // JSON array
+  language      String   @default("en")
+  vocal         String?
+  songReferences String?
+
+  // Lyrics
+  mustInclude   String?
+  catchphrase   String?
+  credit        String?
+  lyricTone     String?
+  contentRating String?
+  approveFirst  String?
+  anythingElse  String?
+
+  // Delivery
+  deliveredAt   DateTime?
+  deliveryUrl   String?  // URL to final song file
+  giftPageSlug  String?  @unique // for gift reveal page
+
+  // Relations
+  customerId    String
+  customer      Customer @relation(fields: [customerId], references: [id])
+  creatorId     String?
+  creator       User?    @relation("AssignedCreator", fields: [creatorId], references: [id])
+
+  statusUpdates OrderStatusUpdate[]
+  messages      OrderMessage[]
+  files         OrderFile[]
+  review        Review?
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([status])
+  @@index([customerId])
+  @@index([creatorId])
+}
+
+// ─── Order Status History ───────────────────────────────────────────
+model OrderStatusUpdate {
+  id        String   @id @default(cuid())
+  orderId   String
+  order     Order    @relation(fields: [orderId], references: [id])
+  fromStatus String
+  toStatus   String
+  note      String?
+  changedById String?
+  changedBy   User?  @relation(fields: [changedById], references: [id])
+  createdAt DateTime @default(now())
+
+  @@index([orderId])
+}
+
+// ─── Messages between admin/creator and customer ────────────────────
+model OrderMessage {
+  id        String   @id @default(cuid())
+  orderId   String
+  order     Order    @relation(fields: [orderId], references: [id])
+  senderId  String?  // null = customer (no account)
+  sender    User?    @relation("SentMessages", fields: [senderId], references: [id])
+  senderType String  // customer | admin | creator
+  content   String
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([orderId])
+}
+
+// ─── Files (drafts, finals, stems, videos) ──────────────────────────
+model OrderFile {
+  id        String   @id @default(cuid())
+  orderId   String
+  order     Order    @relation(fields: [orderId], references: [id])
+  fileType  String   // draft | final | stem | lyric_video | lyric_card
+  fileName  String
+  fileUrl   String
+  fileSize  Int?
+  version   Int      @default(1)
+  createdAt DateTime @default(now())
+}
+
+// ─── Reviews ────────────────────────────────────────────────────────
+model Review {
+  id         String   @id @default(cuid())
+  orderId    String   @unique
+  order      Order    @relation(fields: [orderId], references: [id])
+  customerId String
+  customer   Customer @relation(fields: [customerId], references: [id])
+  rating     Int      // 1-5
+  title      String?
+  content    String
+  occasion   String?
+  isApproved Boolean  @default(false) // admin must approve before public display
+  isPublic   Boolean  @default(false)
+  createdAt  DateTime @default(now())
+}
+
+// ─── Audio Samples (public showcase) ────────────────────────────────
+model AudioSample {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  genre       String
+  mood        String?
+  occasion    String?
+  language    String   @default("en")
+  audioUrl    String
+  duration    Int      // seconds
+  isActive    Boolean  @default(true)
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+}
+
+// ─── Coupons ────────────────────────────────────────────────────────
+model Coupon {
+  id            String    @id @default(cuid())
+  code          String    @unique
+  discountPercent Float
+  label         String
+  maxUses       Int?      // null = unlimited
+  usedCount     Int       @default(0)
+  isActive      Boolean   @default(true)
+  expiresAt     DateTime?
+  createdAt     DateTime  @default(now())
+}
+
+// ─── Referral Tracking ──────────────────────────────────────────────
+model Referral {
+  id             String   @id @default(cuid())
+  referrerEmail  String
+  referredEmail  String
+  referralCode   String
+  creditAwarded  Boolean  @default(false)
+  orderId        String?  // linked order when referred user places an order
+  createdAt      DateTime @default(now())
+}
+
+// ─── Feature Requests ───────────────────────────────────────────────
+model FeatureRequest {
+  id        String   @id @default(cuid())
+  email     String?
+  category  String   // feature | language | feedback
+  content   String
+  status    String   @default("new") // new | reviewed | planned | done
+  createdAt DateTime @default(now())
+}

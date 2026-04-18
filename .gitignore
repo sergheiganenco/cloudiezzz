@@ -1,0 +1,39 @@
+# Dependencies
+node_modules/
+
+# Next.js
+.next/
+out/
+
+# Environment (secrets)
+.env
+.env.local
+.env.production
+
+# Database
+*.db
+*.db-journal
+prisma/migrations/
+
+# Uploads
+public/uploads/*
+!public/uploads/.gitkeep
+
+# Generated
+src/generated/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Debug
+npm-debug.log*
+ck.txt
+ck2.txt
+cookies.txt
+cookies2.txt
+.claude/
