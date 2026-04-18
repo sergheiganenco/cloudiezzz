@@ -71,6 +71,13 @@ export default function AdminDashboard() {
   const [showLeads, setShowLeads] = useState(false);
   const [leads, setLeads] = useState<any[]>([]);
   const [leadsLoading, setLeadsLoading] = useState(false);
+  const [confirmAction, setConfirmAction] = useState<{
+    title: string;
+    message: string;
+    confirmLabel: string;
+    confirmColor: string;
+    onConfirm: () => void;
+  } | null>(null);
 
   useEffect(() => {
     fetch('/api/auth/me')
@@ -171,16 +178,25 @@ export default function AdminDashboard() {
     }
   };
 
-  const handleDeleteFile = async (fileId: string) => {
-    if (!selectedOrder || !confirm('Delete this file?')) return;
-    try {
-      await fetch(`/api/admin/orders/${selectedOrder}/files?fileId=${fileId}`, {
-        method: 'DELETE',
-      });
-      refreshOrderDetail();
-    } catch {
-      // silently fail
-    }
+  const handleDeleteFile = (fileId: string) => {
+    if (!selectedOrder) return;
+    setConfirmAction({
+      title: 'Delete File',
+      message: 'Are you sure you want to delete this file? This action cannot be undone.',
+      confirmLabel: 'Yes, Delete',
+      confirmColor: '#ef4444',
+      onConfirm: async () => {
+        setConfirmAction(null);
+        try {
+          await fetch(`/api/admin/orders/${selectedOrder}/files?fileId=${fileId}`, {
+            method: 'DELETE',
+          });
+          refreshOrderDetail();
+        } catch {
+          // silently fail
+        }
+      },
+    });
   };
 
   const handleCreatorChange = async (creatorId: string) => {
@@ -416,7 +432,7 @@ export default function AdminDashboard() {
                   </td>
                   <td>
                     <span className="status-badge" style={{ background: order.paymentStatus === 'paid' ? '#10b981' : '#f59e0b' }}>
-                      {order.paymentStatus}
+                      {order.paymentStatus === 'paid' ? 'Paid' : 'Unpaid'}
                     </span>
                   </td>
                   <td>{new Date(order.createdAt).toLocaleDateString()}</td>
@@ -541,6 +557,7 @@ export default function AdminDashboard() {
                       updateStatus(orderDetail.id, newStatus);
                       refreshOrderDetail();
                     }}
+                    onRequestConfirm={setConfirmAction}
                   />
                 </div>
               </div>
@@ -712,6 +729,94 @@ export default function AdminDashboard() {
           </div>
         </div>
       )}
+
+      {/* Confirmation Modal */}
+      {confirmAction && (
+        <div
+          onClick={() => setConfirmAction(null)}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0,0,0,0.45)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 9999,
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              background: '#fffdf5',
+              borderRadius: 20,
+              border: '2px solid #5d5346',
+              boxShadow: '0 8px 32px rgba(0,0,0,0.18)',
+              padding: '32px 28px 24px',
+              maxWidth: 400,
+              width: '90%',
+              textAlign: 'center' as const,
+            }}
+          >
+            <h3
+              style={{
+                fontFamily: 'Modak, cursive',
+                fontSize: 24,
+                color: '#e75480',
+                WebkitTextStroke: '0.5px #5d5346',
+                margin: '0 0 12px',
+              }}
+            >
+              {confirmAction.title}
+            </h3>
+            <p
+              style={{
+                fontFamily: 'Fredoka, sans-serif',
+                fontSize: 15,
+                color: '#5d5346',
+                lineHeight: 1.5,
+                margin: '0 0 24px',
+              }}
+            >
+              {confirmAction.message}
+            </p>
+            <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
+              <button
+                onClick={() => setConfirmAction(null)}
+                style={{
+                  padding: '10px 24px',
+                  background: 'transparent',
+                  color: '#6b7280',
+                  border: '2px solid #d1d5db',
+                  borderRadius: 12,
+                  fontSize: 14,
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  fontFamily: 'Fredoka, sans-serif',
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmAction.onConfirm}
+                style={{
+                  padding: '10px 24px',
+                  background: confirmAction.confirmColor,
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: 12,
+                  fontSize: 14,
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  fontFamily: 'Fredoka, sans-serif',
+                  boxShadow: `0 3px 0 ${confirmAction.confirmColor}88`,
+                }}
+              >
+                {confirmAction.confirmLabel}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -742,10 +847,11 @@ const WORKFLOW_STEPS: Record<string, { label: string; next: string; color: strin
   cancelled: [],
 };
 
-function WorkflowActions({ status, paymentStatus, onAction }: {
+function WorkflowActions({ status, paymentStatus, onAction, onRequestConfirm }: {
   status: string;
   paymentStatus: string;
   onAction: (newStatus: string) => void;
+  onRequestConfirm: (action: { title: string; message: string; confirmLabel: string; confirmColor: string; onConfirm: () => void }) => void;
 }) {
   const actions = WORKFLOW_STEPS[status] || [];
   const canRefund = !['refunded', 'cancelled', 'pending'].includes(status);
@@ -785,7 +891,13 @@ function WorkflowActions({ status, paymentStatus, onAction }: {
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
         <span style={{ fontSize: 14, color: '#059669', fontWeight: 600 }}>✅ Delivered — order complete!</span>
         {canRefund && (
-          <button onClick={() => { if (confirm('Issue a refund?')) onAction('refunded'); }} style={smallBtnStyle}>
+          <button onClick={() => onRequestConfirm({
+            title: 'Issue Refund',
+            message: 'Are you sure you want to refund this order? This action cannot be undone.',
+            confirmLabel: 'Yes, Refund',
+            confirmColor: '#f59e0b',
+            onConfirm: () => { onAction('refunded'); },
+          })} style={smallBtnStyle}>
             Refund
           </button>
         )}
@@ -810,12 +922,24 @@ function WorkflowActions({ status, paymentStatus, onAction }: {
 
       {/* Secondary actions */}
       {canCancel && (
-        <button onClick={() => { if (confirm('Cancel this order?')) onAction('cancelled'); }} style={smallBtnStyle}>
+        <button onClick={() => onRequestConfirm({
+          title: 'Cancel Order',
+          message: 'Are you sure you want to cancel this order? The customer will be notified.',
+          confirmLabel: 'Yes, Cancel',
+          confirmColor: '#ef4444',
+          onConfirm: () => { onAction('cancelled'); },
+        })} style={smallBtnStyle}>
           Cancel Order
         </button>
       )}
       {canRefund && (
-        <button onClick={() => { if (confirm('Issue a refund?')) onAction('refunded'); }} style={smallBtnStyle}>
+        <button onClick={() => onRequestConfirm({
+          title: 'Issue Refund',
+          message: 'Are you sure you want to refund this order? This action cannot be undone.',
+          confirmLabel: 'Yes, Refund',
+          confirmColor: '#f59e0b',
+          onConfirm: () => { onAction('refunded'); },
+        })} style={smallBtnStyle}>
           Refund
         </button>
       )}
