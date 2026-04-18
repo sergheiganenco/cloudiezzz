@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { getSessionUser, requireRole } from '@/lib/auth';
+import { put, del } from '@vercel/blob';
 
 const ALLOWED_FILE_TYPES = ['draft', 'final', 'stem', 'lyric_video', 'lyric_card'];
+const MAX_FILE_SIZE = 25 * 1024 * 1024; // 25MB for audio/video files
 
 export async function GET(
   request: NextRequest,
@@ -14,15 +16,6 @@ export async function GET(
   }
 
   const { id } = await params;
-
-  const order = await prisma.order.findUnique({
-    where: { id },
-    select: { id: true },
-  });
-
-  if (!order) {
-    return NextResponse.json({ error: 'Order not found' }, { status: 404 });
-  }
 
   const files = await prisma.orderFile.findMany({
     where: { orderId: id },
@@ -45,7 +38,7 @@ export async function POST(
 
   const order = await prisma.order.findUnique({
     where: { id },
-    select: { id: true },
+    select: { id: true, orderNumber: true },
   });
 
   if (!order) {
@@ -64,24 +57,24 @@ export async function POST(
     return NextResponse.json({ error: `Invalid fileType. Must be one of: ${ALLOWED_FILE_TYPES.join(', ')}` }, { status: 400 });
   }
 
-  if (file.size > 5 * 1024 * 1024) {
-    return NextResponse.json({ error: 'File too large (max 5MB)' }, { status: 400 });
+  if (file.size > MAX_FILE_SIZE) {
+    return NextResponse.json({ error: 'File too large (max 25MB)' }, { status: 400 });
   }
 
-  const buffer = Buffer.from(await file.arrayBuffer());
-  const base64 = buffer.toString('base64');
-  const mimeType = file.type || 'application/octet-stream';
-  const dataUrl = `data:${mimeType};base64,${base64}`;
-
-  const fileName = file.name;
+  // Upload to Vercel Blob
+  const blobPath = `orders/${order.orderNumber}/${fileType}/${file.name}`;
+  const blob = await put(blobPath, file, {
+    access: 'public',
+    addRandomSuffix: true,
+  });
 
   const orderFile = await prisma.orderFile.create({
     data: {
       orderId: id,
-      fileName,
-      fileUrl: dataUrl,
+      fileName: file.name,
+      fileUrl: blob.url,
       fileType,
-      fileSize: buffer.length,
+      fileSize: file.size,
     },
   });
 
@@ -110,6 +103,13 @@ export async function DELETE(
 
   if (!orderFile) {
     return NextResponse.json({ error: 'File not found' }, { status: 404 });
+  }
+
+  // Delete from Vercel Blob
+  try {
+    await del(orderFile.fileUrl);
+  } catch {
+    // Blob may already be deleted — continue
   }
 
   // Delete from database

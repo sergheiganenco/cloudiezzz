@@ -208,22 +208,79 @@ function OrderTracking() {
           </div>
         )}
 
-        {/* Delivered files */}
+        {/* Delivered files — audio player + downloads */}
         {order.files.length > 0 && (
           <div style={s.section}>
             <h3 style={s.sectionTitle}>Your Song</h3>
-            {order.files.map((f, i) => (
-              <a key={i} href={f.url} style={s.fileLink} download>
-                {f.type === 'lyric_video' ? 'Lyric Video' : 'Download Song'} — {f.name}
-              </a>
-            ))}
+
+            {/* Audio player for final/draft songs */}
+            {order.files
+              .filter((f) => ['final', 'draft'].includes(f.type) && (f.name.endsWith('.mp3') || f.name.endsWith('.wav') || f.name.endsWith('.m4a') || f.name.endsWith('.ogg')))
+              .map((f, i) => (
+                <div key={`player-${i}`} style={{
+                  background: 'linear-gradient(135deg, #fce7f3, #fef3c7)',
+                  borderRadius: 16, padding: '20px 24px', marginBottom: 16,
+                  border: '2px solid #f9a8d4',
+                }}>
+                  <p style={{ fontSize: 13, fontWeight: 600, color: '#ec4899', marginBottom: 8, textTransform: 'uppercase', letterSpacing: 1 }}>
+                    {f.type === 'final' ? '🎵 Final Song' : '🎵 Draft'}
+                  </p>
+                  <p style={{ fontSize: 16, fontWeight: 700, color: '#2a2418', marginBottom: 12 }}>{f.name}</p>
+                  <audio
+                    controls
+                    style={{ width: '100%', borderRadius: 8 }}
+                    preload="metadata"
+                  >
+                    <source src={f.url} />
+                    Your browser does not support audio playback.
+                  </audio>
+                  <a href={f.url} download style={{
+                    display: 'inline-block', marginTop: 10, fontSize: 13,
+                    color: '#ec4899', fontWeight: 600, textDecoration: 'none',
+                  }}>
+                    ⬇ Download {f.type === 'final' ? 'Song' : 'Draft'}
+                  </a>
+                </div>
+              ))}
+
+            {/* Lyric video */}
+            {order.files
+              .filter((f) => f.type === 'lyric_video')
+              .map((f, i) => (
+                <div key={`video-${i}`} style={{
+                  background: '#f8f4ef', borderRadius: 12, padding: 16, marginBottom: 12,
+                }}>
+                  <p style={{ fontSize: 13, fontWeight: 600, color: '#8b5cf6', marginBottom: 8 }}>🎬 Lyric Video</p>
+                  <video controls style={{ width: '100%', borderRadius: 8 }} preload="metadata">
+                    <source src={f.url} />
+                  </video>
+                  <a href={f.url} download style={{ display: 'inline-block', marginTop: 8, fontSize: 13, color: '#8b5cf6', fontWeight: 600, textDecoration: 'none' }}>
+                    ⬇ Download Video
+                  </a>
+                </div>
+              ))}
+
+            {/* Other files (stems, lyric cards) */}
+            {order.files
+              .filter((f) => !['final', 'draft', 'lyric_video'].includes(f.type) || !(f.name.endsWith('.mp3') || f.name.endsWith('.wav') || f.name.endsWith('.m4a') || f.name.endsWith('.ogg')))
+              .filter((f) => ['final', 'draft'].includes(f.type) ? !(f.name.endsWith('.mp3') || f.name.endsWith('.wav') || f.name.endsWith('.m4a') || f.name.endsWith('.ogg')) : !['lyric_video'].includes(f.type))
+              .map((f, i) => (
+                <a key={`other-${i}`} href={f.url} style={s.fileLink} download>
+                  {f.type === 'stem' ? '🎹 Stems' : f.type === 'lyric_card' ? '📜 Lyric Card' : '📄 File'} — {f.name}
+                </a>
+              ))}
+
+            {/* Gift page share link */}
             {order.giftPageSlug && (
-              <p style={{ fontSize: 13, color: '#8b7e6e', marginTop: 12 }}>
-                Share with your loved one:{' '}
-                <a href={`/gift/${order.giftPageSlug}`} style={{ color: '#ec4899' }}>
+              <div style={{
+                background: '#fce7f3', borderRadius: 12, padding: 16, marginTop: 16,
+                border: '1px dashed #ec4899',
+              }}>
+                <p style={{ fontSize: 14, fontWeight: 600, color: '#ec4899', marginBottom: 6 }}>🎁 Share with your loved one</p>
+                <a href={`/gift/${order.giftPageSlug}`} style={{ color: '#ec4899', fontSize: 13, wordBreak: 'break-all' }}>
                   {typeof window !== 'undefined' && `${window.location.origin}/gift/${order.giftPageSlug}`}
                 </a>
-              </p>
+              </div>
             )}
           </div>
         )}
