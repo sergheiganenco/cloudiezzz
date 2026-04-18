@@ -16,10 +16,10 @@ interface ChatReply {
 const TOPICS: { patterns: string[]; reply: ChatReply }[] = [
   // Pricing
   {
-    patterns: ['price', 'cost', 'how much', 'expensive', 'cheap', 'afford', 'pay', 'pricing', 'budget', 'fee', 'rate', 'worth'],
+    patterns: ['price', 'cost', 'how much', 'expensive', 'cheap', 'afford', 'pay', 'pricing', 'budget', 'fee', 'rate', 'worth', 'package', 'packages', 'plan', 'plans', 'tier', 'basic', 'standard', 'premium', 'business', 'included', 'include', 'what do i get', 'what comes with', 'difference', 'compare'],
     reply: {
-      text: "Our packages start at just $39! 💰\n\n• Basic — $39 (1 song, 1 revision, 72h)\n• Standard — $79 (2 versions, 2 revisions, 48h)\n• Premium — $149 (3 versions, unlimited revisions, 24h)\n• Business — $299 (call, licensing, stems)\n\nUse code CLOUD25 for 25% off!",
-      followUps: ['What\'s included in Premium?', 'Do you have a discount?', 'How do I order?'],
+      text: "Here are our packages! 💰\n\n• Basic ($39) — 1 song, 1 revision, MP3, 72h delivery\n• Standard ($79) — 2 versions, 2 revisions, lyric sheet, 48h\n• Premium ($149) — 3 versions, unlimited revisions, lyric video, 24h\n• Business ($299) — brief call, licensing, stems, jingles, 5 days\n\nAll packages include professional production & custom lyrics from your story. Use code CLOUD25 for 25% off!",
+      followUps: ['How long does delivery take?', 'Do you have a discount?', 'How do I order?'],
     },
   },
   // Timeline
@@ -155,14 +155,24 @@ const TOPICS: { patterns: string[]; reply: ChatReply }[] = [
 function findReply(text: string): ChatReply {
   const t = text.toLowerCase().trim();
 
-  // Score each topic by how many patterns match
+  // Normalize common variations
+  const normalized = t
+    .replace(/what's/g, 'what is')
+    .replace(/what're/g, 'what are')
+    .replace(/how's/g, 'how is')
+    .replace(/don't/g, 'do not')
+    .replace(/can't/g, 'cannot')
+    .replace(/i'd/g, 'i would')
+    .replace(/[?!.,]/g, '');
+
+  // Score each topic by how many patterns match (check both original and normalized)
   let bestScore = 0;
   let bestReply: ChatReply | null = null;
 
   for (const topic of TOPICS) {
     let score = 0;
     for (const pattern of topic.patterns) {
-      if (t.includes(pattern)) score++;
+      if (t.includes(pattern) || normalized.includes(pattern)) score++;
     }
     if (score > bestScore) {
       bestScore = score;
