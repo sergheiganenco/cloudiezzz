@@ -217,7 +217,12 @@ export default function AdminDashboard() {
       body: JSON.stringify({ status: newStatus }),
     });
     loadOrders();
-    if (selectedOrder === orderId) setSelectedOrder(orderId);
+    // Refresh modal if this order is open
+    if (selectedOrder === orderId) {
+      const res = await fetch(`/api/admin/orders/${orderId}`);
+      const d = await res.json();
+      setOrderDetail(d.order);
+    }
   };
 
   const sendAdminMessage = async () => {
