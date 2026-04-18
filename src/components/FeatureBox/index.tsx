@@ -14,7 +14,7 @@ export default function FeatureBox() {
   async function handleSubmit() {
     if (!suggestion.trim()) {
       playNote(220, { type: 'sine', dur: 0.3, vol: 0.12 });
-      alert('Please share your suggestion first ✨');
+      setError('Please share your suggestion first');
       return;
     }
 
@@ -101,11 +101,15 @@ export default function FeatureBox() {
             rows={4}
             placeholder="Tell us what would make Cloudiezzz even better..."
             value={suggestion}
-            onChange={(e) => setSuggestion(e.target.value)}
+            onChange={(e) => { setSuggestion(e.target.value); setError(''); }}
           />
         </label>
       </div>
-      {error && <div className="form-error">{error}</div>}
+      {error && (
+        <div style={{ margin: '0 0 16px', padding: '10px 16px', background: '#fef2f2', border: '2px solid #fca5a5', borderRadius: 12 }}>
+          <p style={{ color: '#dc2626', fontSize: 14, fontWeight: 600, margin: 0, fontFamily: 'Fredoka, sans-serif' }}>⚠ {error}</p>
+        </div>
+      )}
       <button className="review-submit" onClick={handleSubmit} disabled={loading}>
         {loading ? 'Sending...' : 'Send Suggestion ✨'}
       </button>
