@@ -558,6 +558,7 @@ export default function AdminDashboard() {
                   <WorkflowActions
                     status={orderDetail.status}
                     paymentStatus={orderDetail.paymentStatus}
+                    hasFiles={orderDetail.files?.length > 0}
                     onAction={(newStatus) => {
                       updateStatus(orderDetail.id, newStatus);
                       refreshOrderDetail();
@@ -852,13 +853,15 @@ const WORKFLOW_STEPS: Record<string, { label: string; next: string; color: strin
   cancelled: [],
 };
 
-function WorkflowActions({ status, paymentStatus, onAction, onRequestConfirm }: {
+function WorkflowActions({ status, paymentStatus, hasFiles, onAction, onRequestConfirm }: {
   status: string;
   paymentStatus: string;
+  hasFiles: boolean;
   onAction: (newStatus: string) => void;
   onRequestConfirm: (action: { title: string; message: string; confirmLabel: string; confirmColor: string; onConfirm: () => void }) => void;
 }) {
   const actions = WORKFLOW_STEPS[status] || [];
+  const needsFiles = ['review', 'completed'].includes(status) && !hasFiles;
   const canRefund = !['refunded', 'cancelled', 'pending'].includes(status);
   const canCancel = !['refunded', 'cancelled', 'delivered'].includes(status);
 
@@ -912,18 +915,48 @@ function WorkflowActions({ status, paymentStatus, onAction, onRequestConfirm }: 
 
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+      {/* Warning: no files uploaded */}
+      {needsFiles && (
+        <div style={{
+          width: '100%', padding: '10px 16px', background: '#fef2f2',
+          border: '2px solid #fca5a5', borderRadius: 12, marginBottom: 8,
+          fontSize: 14, fontWeight: 600, color: '#dc2626', fontFamily: 'Fredoka, sans-serif',
+        }}>
+          ⚠ Upload a song file before marking as complete or delivering
+        </div>
+      )}
+
       {/* Main workflow buttons */}
-      {actions.map((a) => (
-        <button
-          key={a.next}
-          onClick={() => onAction(a.next)}
-          style={btnStyle(a.color)}
-          onMouseOver={(e) => (e.currentTarget.style.transform = 'translateY(-2px)')}
-          onMouseOut={(e) => (e.currentTarget.style.transform = 'none')}
-        >
-          {a.icon} {a.label}
-        </button>
-      ))}
+      {actions.map((a) => {
+        const blocked = !hasFiles && ['completed', 'delivered'].includes(a.next);
+        return (
+          <button
+            key={a.next}
+            onClick={() => {
+              if (blocked) {
+                onRequestConfirm({
+                  title: 'Upload Required',
+                  message: 'Please upload the song file first before completing this order. Go to the Files section above to upload.',
+                  confirmLabel: 'OK',
+                  confirmColor: '#6b7280',
+                  onConfirm: () => {},
+                });
+                return;
+              }
+              onAction(a.next);
+            }}
+            style={{
+              ...btnStyle(blocked ? '#9ca3af' : a.color),
+              opacity: blocked ? 0.5 : 1,
+              cursor: blocked ? 'not-allowed' : 'pointer',
+            }}
+            onMouseOver={(e) => !blocked && (e.currentTarget.style.transform = 'translateY(-2px)')}
+            onMouseOut={(e) => (e.currentTarget.style.transform = 'none')}
+          >
+            {a.icon} {a.label}
+          </button>
+        );
+      })}
 
       {/* Secondary actions */}
       {canCancel && (
