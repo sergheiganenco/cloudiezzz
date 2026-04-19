@@ -17,6 +17,7 @@ interface OrderData {
   createdAt: string;
   deliveredAt: string | null;
   giftPageSlug: string | null;
+  hasReview: boolean;
   statusUpdates: { status: string; note: string | null; date: string }[];
   files: { type: string; name: string; url: string }[];
   messages: { from: string; content: string; date: string }[];
@@ -51,9 +52,15 @@ function OrderTracking() {
   const [loading, setLoading] = useState(true);
   const [msgInput, setMsgInput] = useState('');
   const [sending, setSending] = useState(false);
+  const [reviewRating, setReviewRating] = useState(0);
+  const [reviewHover, setReviewHover] = useState(0);
+  const [reviewText, setReviewText] = useState('');
+  const [reviewSubmitted, setReviewSubmitted] = useState(false);
+  const [reviewSubmitting, setReviewSubmitting] = useState(false);
 
   const justPaid = searchParams.get('paid') === 'true';
   const wasCancelled = searchParams.get('cancelled') === 'true';
+  const showReview = searchParams.get('review') === 'true';
 
   useEffect(() => {
     fetch(`/api/order/${token}`)
@@ -282,6 +289,84 @@ function OrderTracking() {
                 </a>
               </div>
             )}
+          </div>
+        )}
+
+        {/* Review Form — shown for delivered/completed orders */}
+        {['completed', 'delivered'].includes(order.status) && !order.hasReview && !reviewSubmitted && (
+          <div style={s.section}>
+            <h3 style={s.sectionTitle}>Leave a Review</h3>
+            <p style={{ fontSize: 14, color: '#5d5346', marginBottom: 16 }}>
+              How was your experience? Your feedback helps us improve!
+            </p>
+            <div style={{ display: 'flex', justifyContent: 'center', gap: 4, marginBottom: 16 }}>
+              {[1, 2, 3, 4, 5].map((star) => (
+                <button
+                  key={star}
+                  onClick={() => setReviewRating(star)}
+                  onMouseEnter={() => setReviewHover(star)}
+                  onMouseLeave={() => setReviewHover(0)}
+                  style={{
+                    background: 'none', border: 'none', cursor: 'pointer', fontSize: 32, padding: 2,
+                    color: star <= (reviewHover || reviewRating) ? '#fbbf24' : '#e5e7eb',
+                    transition: 'all .15s', transform: star <= (reviewHover || reviewRating) ? 'scale(1.15)' : 'scale(1)',
+                  }}
+                >
+                  ★
+                </button>
+              ))}
+            </div>
+            <textarea
+              value={reviewText}
+              onChange={(e) => setReviewText(e.target.value)}
+              placeholder="Tell us about your song and how it was received..."
+              rows={4}
+              style={{
+                width: '100%', padding: '12px 14px', borderRadius: 12, border: '1px solid #e8e0d4',
+                fontSize: 14, fontFamily: 'Fredoka, sans-serif', resize: 'vertical' as const,
+                background: '#faf7f2', outline: 'none', boxSizing: 'border-box' as const,
+              }}
+            />
+            <button
+              onClick={async () => {
+                if (!reviewRating || !reviewText.trim()) return;
+                setReviewSubmitting(true);
+                try {
+                  const res = await fetch('/api/reviews', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ accessToken: token, rating: reviewRating, content: reviewText.trim() }),
+                  });
+                  if (res.ok) setReviewSubmitted(true);
+                  else {
+                    const d = await res.json();
+                    alert(d.error || 'Failed to submit review');
+                  }
+                } catch { alert('Failed to submit review'); }
+                finally { setReviewSubmitting(false); }
+              }}
+              disabled={!reviewRating || !reviewText.trim() || reviewSubmitting}
+              style={{
+                display: 'block', margin: '12px auto 0', padding: '10px 28px',
+                background: !reviewRating || !reviewText.trim() ? '#d1d5db' : '#ec4899',
+                color: '#fff', border: 'none', borderRadius: 10, fontSize: 14,
+                fontWeight: 600, cursor: !reviewRating || !reviewText.trim() ? 'default' : 'pointer',
+                fontFamily: 'Fredoka, sans-serif',
+              }}
+            >
+              {reviewSubmitting ? 'Submitting...' : 'Submit Review'}
+            </button>
+          </div>
+        )}
+
+        {/* Review submitted confirmation */}
+        {(reviewSubmitted || (order.hasReview && showReview)) && (
+          <div style={{ ...s.section, textAlign: 'center' as const }}>
+            <div style={{ fontSize: 48, marginBottom: 8 }}>♥</div>
+            <h3 style={{ ...s.sectionTitle, textAlign: 'center' as const }}>Thank you!</h3>
+            <p style={{ fontSize: 14, color: '#5d5346' }}>
+              Your review has been received. It means the world to us!
+            </p>
           </div>
         )}
 

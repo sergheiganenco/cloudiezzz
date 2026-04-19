@@ -340,6 +340,39 @@ export async function sendLeadReminder(lead: {
   });
 }
 
+// ─── Review request ───────────────────────────────────────────────
+export async function sendReviewRequest(order: {
+  buyerEmail: string;
+  buyerName: string;
+  orderNumber: string;
+  accessToken: string;
+  recName: string | null;
+}) {
+  const reviewUrl = `${APP_URL}/order/${order.accessToken}?review=true`;
+
+  await sendEmail({
+    to: order.buyerEmail,
+    subject: `How was your song? Leave a review!`,
+    html: wrap(`
+      <h2 style="color:#2a2418;font-size:20px;margin:0 0 16px;">How did it go?</h2>
+      <p style="color:#5d5346;font-size:15px;line-height:1.6;">
+        Hey ${order.buyerName}! We hope ${order.recName ? `${order.recName} loved` : 'you loved'} the song we created for you (${order.orderNumber}).
+      </p>
+      <p style="color:#5d5346;font-size:15px;line-height:1.6;">
+        Your feedback means the world to us. Would you take a minute to share your experience?
+      </p>
+      <div style="text-align:center;margin:24px 0;">
+        <a href="${reviewUrl}" style="display:inline-block;padding:14px 36px;background:#ec4899;color:#fff;border-radius:12px;text-decoration:none;font-weight:700;font-size:16px;">
+          Leave a Review
+        </a>
+      </div>
+      <p style="color:#8b7e6e;font-size:13px;">
+        It only takes 30 seconds and helps other people discover Cloudiezzz.
+      </p>
+    `),
+  });
+}
+
 // ─── Delivery with gift link ────────────────────────────────────────
 export async function sendDeliveryEmail(order: {
   buyerEmail: string;

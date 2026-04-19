@@ -16,6 +16,7 @@ export async function GET(
         orderBy: { createdAt: 'desc' },
       },
       messages: { orderBy: { createdAt: 'asc' } },
+      review: { select: { id: true } },
     },
   });
 
@@ -38,6 +39,7 @@ export async function GET(
     createdAt: order.createdAt,
     deliveredAt: order.deliveredAt,
     giftPageSlug: order.giftPageSlug,
+    hasReview: !!order.review,
     statusUpdates: order.statusUpdates.map((u: { toStatus: string; note: string | null; createdAt: Date }) => ({
       status: u.toStatus,
       note: u.note,

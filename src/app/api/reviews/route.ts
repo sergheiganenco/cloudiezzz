@@ -1,19 +1,34 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 
-// GET: Public approved reviews
-export async function GET() {
+// GET: Public approved reviews with cursor pagination + featured filter
+export async function GET(request: NextRequest) {
+  const { searchParams } = new URL(request.url);
+  const featured = searchParams.get('featured');
+  const cursor = searchParams.get('cursor');
+  const limit = Math.min(parseInt(searchParams.get('limit') || '9'), 50);
+
+  const where: any = { isApproved: true, isPublic: true };
+  if (featured === 'true') {
+    where.isFeatured = true;
+  }
+
   const reviews = await prisma.review.findMany({
-    where: { isApproved: true, isPublic: true },
+    where,
     orderBy: { createdAt: 'desc' },
-    take: 20,
+    take: limit + 1, // fetch one extra to check if there's more
+    ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
     include: {
       customer: { select: { name: true } },
     },
   });
 
+  const hasMore = reviews.length > limit;
+  const items = hasMore ? reviews.slice(0, limit) : reviews;
+  const nextCursor = hasMore ? items[items.length - 1].id : null;
+
   return NextResponse.json({
-    reviews: reviews.map((r: any) => ({
+    reviews: items.map((r: any) => ({
       id: r.id,
       author: r.customer.name,
       rating: r.rating,
@@ -22,6 +37,8 @@ export async function GET() {
       occasion: r.occasion,
       date: r.createdAt,
     })),
+    nextCursor,
+    hasMore,
   });
 }
 

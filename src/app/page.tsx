@@ -1,6 +1,7 @@
 import Hero from '@/components/Hero';
 import TrustBar from '@/components/TrustBar';
 import CommissionCard from '@/components/CommissionCard';
+import ReviewCarousel from '@/components/ReviewCarousel';
 import Footer from '@/components/Footer';
 
 export default function HomePage() {
@@ -9,6 +10,7 @@ export default function HomePage() {
       <Hero />
       <TrustBar />
       <CommissionCard />
+      <ReviewCarousel />
       <Footer />
     </div>
   );

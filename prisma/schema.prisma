@@ -180,6 +180,7 @@ model Review {
   occasion   String?
   isApproved Boolean  @default(false) // admin must approve before public display
   isPublic   Boolean  @default(false)
+  isFeatured Boolean  @default(false) // featured reviews shown in homepage carousel
   createdAt  DateTime @default(now())
 }
 

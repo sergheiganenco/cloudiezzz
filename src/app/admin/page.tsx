@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 interface OrderRow {
   id: string;
@@ -27,6 +28,10 @@ interface Stats {
   completedOrders: number;
   totalCustomers: number;
   totalRevenue: number;
+  revenueToday: number;
+  revenueWeek: number;
+  revenueMonth: number;
+  chartData: { week: string; revenue: number; orders: number }[];
 }
 
 interface User {
@@ -68,9 +73,15 @@ export default function AdminDashboard() {
   const [creators, setCreators] = useState<{ id: string; name: string; email: string }[]>([]);
   const [uploadFileType, setUploadFileType] = useState('draft');
   const [uploading, setUploading] = useState(false);
-  const [showLeads, setShowLeads] = useState(false);
+  const [activeTab, setActiveTab] = useState<'orders' | 'leads' | 'reviews'>('orders');
+  const [search, setSearch] = useState('');
+  const [searchInput, setSearchInput] = useState('');
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
   const [leads, setLeads] = useState<any[]>([]);
   const [leadsLoading, setLeadsLoading] = useState(false);
+  const [adminReviews, setAdminReviews] = useState<any[]>([]);
+  const [reviewsLoading, setReviewsLoading] = useState(false);
   const [confirmAction, setConfirmAction] = useState<{
     title: string;
     message: string;
@@ -100,7 +111,11 @@ export default function AdminDashboard() {
   const loadOrders = useCallback(() => {
     if (!user) return;
     setLoading(true);
-    fetch(`/api/admin/orders?status=${filter}&page=${page}&limit=20`)
+    const params = new URLSearchParams({ status: filter, page: String(page), limit: '20' });
+    if (search) params.set('search', search);
+    if (dateFrom) params.set('dateFrom', dateFrom);
+    if (dateTo) params.set('dateTo', dateTo);
+    fetch(`/api/admin/orders?${params}`)
       .then((r) => r.json())
       .then((d) => {
         setOrders(d.orders || []);
@@ -108,7 +123,7 @@ export default function AdminDashboard() {
       })
       .catch(console.error)
       .finally(() => setLoading(false));
-  }, [user, filter, page]);
+  }, [user, filter, page, search, dateFrom, dateTo]);
 
   useEffect(() => { loadOrders(); }, [loadOrders]);
 
@@ -130,14 +145,28 @@ export default function AdminDashboard() {
   }, [user]);
 
   useEffect(() => {
-    if (!user || !showLeads) return;
+    if (!user || activeTab !== 'leads') return;
     setLeadsLoading(true);
     fetch('/api/leads')
       .then((r) => r.json())
       .then((d) => setLeads(d.leads || []))
       .catch(console.error)
       .finally(() => setLeadsLoading(false));
-  }, [user, showLeads]);
+  }, [user, activeTab]);
+
+  const loadAdminReviews = useCallback(() => {
+    if (!user) return;
+    setReviewsLoading(true);
+    fetch('/api/admin/reviews')
+      .then((r) => r.json())
+      .then((d) => setAdminReviews(d.reviews || []))
+      .catch(console.error)
+      .finally(() => setReviewsLoading(false));
+  }, [user]);
+
+  useEffect(() => {
+    if (activeTab === 'reviews') loadAdminReviews();
+  }, [activeTab, loadAdminReviews]);
 
   const refreshOrderDetail = useCallback(() => {
     if (!selectedOrder) return;
@@ -251,6 +280,37 @@ export default function AdminDashboard() {
     (m: any) => m.senderType === 'customer' && !m.isRead
   ).length || 0;
 
+  const [reviewRequested, setReviewRequested] = useState<Set<string>>(new Set());
+
+  const requestReview = async (orderId: string) => {
+    try {
+      const res = await fetch('/api/admin/reviews/request', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orderId }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setReviewRequested((prev) => new Set(prev).add(orderId));
+      } else {
+        alert(data.error || 'Failed to send review request');
+      }
+    } catch {
+      alert('Failed to send review request');
+    }
+  };
+
+  const toggleReviewFlag = async (reviewId: string, field: string, value: boolean) => {
+    await fetch('/api/admin/reviews', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ reviewId, [field]: value }),
+    });
+    setAdminReviews((prev) =>
+      prev.map((r: any) => (r.id === reviewId ? { ...r, [field]: value } : r))
+    );
+  };
+
   const handleLogout = async () => {
     await fetch('/api/auth/logout', { method: 'POST' });
     router.push('/admin/login');
@@ -276,74 +336,106 @@ export default function AdminDashboard() {
 
       {/* Stats */}
       {stats && user.role === 'admin' && (
-        <div className="stats-grid">
-          <div className="stat-card">
-            <div className="stat-value">{stats.totalOrders}</div>
-            <div className="stat-label">Total Orders</div>
+        <>
+          <div className="stats-grid">
+            <div className="stat-card">
+              <div className="stat-value">{stats.totalOrders}</div>
+              <div className="stat-label">Total Orders</div>
+            </div>
+            <div className="stat-card">
+              <div className="stat-value">{stats.pendingOrders}</div>
+              <div className="stat-label">Awaiting Payment</div>
+            </div>
+            <div className="stat-card">
+              <div className="stat-value">{stats.paidOrders}</div>
+              <div className="stat-label">Paid</div>
+            </div>
+            <div className="stat-card">
+              <div className="stat-value">{stats.inProgressOrders}</div>
+              <div className="stat-label">In Progress</div>
+            </div>
+            <div className="stat-card">
+              <div className="stat-value">{stats.completedOrders}</div>
+              <div className="stat-label">Completed</div>
+            </div>
+            <div className="stat-card">
+              <div className="stat-value">{stats.totalCustomers}</div>
+              <div className="stat-label">Customers</div>
+            </div>
           </div>
-          <div className="stat-card">
-            <div className="stat-value">{stats.pendingOrders}</div>
-            <div className="stat-label">Awaiting Payment</div>
+
+          {/* Revenue Cards */}
+          <div className="stats-grid" style={{ paddingTop: 0 }}>
+            <div className="stat-card revenue-card">
+              <div className="stat-value" style={{ color: '#10b981' }}>${(stats.revenueToday / 100).toFixed(2)}</div>
+              <div className="stat-label">Today</div>
+            </div>
+            <div className="stat-card revenue-card">
+              <div className="stat-value" style={{ color: '#3b82f6' }}>${(stats.revenueWeek / 100).toFixed(2)}</div>
+              <div className="stat-label">This Week</div>
+            </div>
+            <div className="stat-card revenue-card">
+              <div className="stat-value" style={{ color: '#8b5cf6' }}>${(stats.revenueMonth / 100).toFixed(2)}</div>
+              <div className="stat-label">This Month</div>
+            </div>
+            <div className="stat-card revenue-card">
+              <div className="stat-value" style={{ color: 'var(--pink)' }}>${(stats.totalRevenue / 100).toFixed(2)}</div>
+              <div className="stat-label">All Time</div>
+            </div>
           </div>
-          <div className="stat-card">
-            <div className="stat-value">{stats.paidOrders}</div>
-            <div className="stat-label">Paid</div>
-          </div>
-          <div className="stat-card">
-            <div className="stat-value">{stats.inProgressOrders}</div>
-            <div className="stat-label">In Progress</div>
-          </div>
-          <div className="stat-card">
-            <div className="stat-value">{stats.completedOrders}</div>
-            <div className="stat-label">Completed</div>
-          </div>
-          <div className="stat-card">
-            <div className="stat-value">{stats.totalCustomers}</div>
-            <div className="stat-label">Customers</div>
-          </div>
-          <div className="stat-card wide">
-            <div className="stat-value">${(stats.totalRevenue / 100).toFixed(2)}</div>
-            <div className="stat-label">Revenue</div>
-          </div>
-        </div>
+
+          {/* Revenue Chart */}
+          {stats.chartData && stats.chartData.length > 0 && (
+            <div className="chart-card">
+              <h3 className="chart-title">Revenue (last 12 weeks)</h3>
+              <ResponsiveContainer width="100%" height={260}>
+                <BarChart data={stats.chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--line)" />
+                  <XAxis dataKey="week" tick={{ fontSize: 12, fill: 'var(--ink-mute)' }} />
+                  <YAxis tick={{ fontSize: 12, fill: 'var(--ink-mute)' }} tickFormatter={(v) => `$${v}`} />
+                  <Tooltip
+                    contentStyle={{
+                      background: 'var(--yellow-soft)', border: '2px solid var(--ink)',
+                      borderRadius: 12, fontFamily: 'Fredoka, sans-serif', fontSize: 14,
+                    }}
+                    formatter={(value: any, name: any) => [
+                      name === 'revenue' ? `$${Number(value).toFixed(2)}` : value,
+                      name === 'revenue' ? 'Revenue' : 'Orders',
+                    ]}
+                  />
+                  <Bar dataKey="revenue" fill="var(--pink)" radius={[6, 6, 0, 0]} />
+                  <Bar dataKey="orders" fill="var(--ink)" radius={[6, 6, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          )}
+        </>
       )}
 
       {/* Tab Toggle */}
       <div style={{ display: 'flex', gap: 10, padding: '0 40px 16px' }}>
-        <button
-          onClick={() => setShowLeads(false)}
-          style={{
-            padding: '8px 20px',
-            borderRadius: 8,
-            border: 'none',
-            fontWeight: 600,
-            fontSize: 14,
-            cursor: 'pointer',
-            background: !showLeads ? '#7c3aed' : '#f3f4f6',
-            color: !showLeads ? '#fff' : '#6b7280',
-          }}
-        >
-          Orders
-        </button>
-        <button
-          onClick={() => setShowLeads(true)}
-          style={{
-            padding: '8px 20px',
-            borderRadius: 8,
-            border: 'none',
-            fontWeight: 600,
-            fontSize: 14,
-            cursor: 'pointer',
-            background: showLeads ? '#7c3aed' : '#f3f4f6',
-            color: showLeads ? '#fff' : '#6b7280',
-          }}
-        >
-          Leads
-        </button>
+        {(['orders', 'leads', 'reviews'] as const).map((tab) => (
+          <button
+            key={tab}
+            onClick={() => setActiveTab(tab)}
+            style={{
+              padding: '8px 20px',
+              borderRadius: 8,
+              border: 'none',
+              fontWeight: 600,
+              fontSize: 14,
+              cursor: 'pointer',
+              background: activeTab === tab ? '#7c3aed' : '#f3f4f6',
+              color: activeTab === tab ? '#fff' : '#6b7280',
+            }}
+          >
+            {tab.charAt(0).toUpperCase() + tab.slice(1)}
+          </button>
+        ))}
       </div>
 
       {/* Leads Table */}
-      {showLeads && (
+      {activeTab === 'leads' && (
         <div className="admin-table-wrap">
           {leadsLoading ? (
             <p className="admin-loading">Loading leads...</p>
@@ -384,8 +476,122 @@ export default function AdminDashboard() {
         </div>
       )}
 
-      {/* Filters */}
-      {!showLeads && <div className="admin-filters">
+      {/* Reviews Management */}
+      {activeTab === 'reviews' && (
+        <div className="admin-table-wrap">
+          {reviewsLoading ? (
+            <p className="admin-loading">Loading reviews...</p>
+          ) : adminReviews.length === 0 ? (
+            <p className="admin-empty">No reviews yet.</p>
+          ) : (
+            <table className="admin-table">
+              <thead>
+                <tr>
+                  <th>Order</th>
+                  <th>Author</th>
+                  <th>Rating</th>
+                  <th>Review</th>
+                  <th>Occasion</th>
+                  <th>Date</th>
+                  <th>Approved</th>
+                  <th>Public</th>
+                  <th>Featured</th>
+                </tr>
+              </thead>
+              <tbody>
+                {adminReviews.map((rev: any) => (
+                  <tr key={rev.id}>
+                    <td>{rev.orderNumber}</td>
+                    <td>
+                      <div style={{ fontWeight: 600 }}>{rev.author}</div>
+                      <div style={{ fontSize: 11, color: '#9ca3af' }}>{rev.authorEmail}</div>
+                    </td>
+                    <td style={{ color: '#fbbf24', letterSpacing: 1 }}>{'★'.repeat(rev.rating)}</td>
+                    <td style={{ maxWidth: 300, fontSize: 13, lineHeight: 1.4 }}>
+                      {rev.title && <strong>{rev.title}: </strong>}
+                      {rev.content.length > 120 ? rev.content.slice(0, 120) + '...' : rev.content}
+                    </td>
+                    <td>{rev.occasion || '—'}</td>
+                    <td>{new Date(rev.createdAt).toLocaleDateString()}</td>
+                    <td>
+                      <button
+                        onClick={() => toggleReviewFlag(rev.id, 'isApproved', !rev.isApproved)}
+                        style={{
+                          padding: '4px 12px', borderRadius: 8, border: 'none',
+                          background: rev.isApproved ? '#10b981' : '#ef4444', color: '#fff',
+                          fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'Fredoka, sans-serif',
+                        }}
+                      >
+                        {rev.isApproved ? 'Yes' : 'No'}
+                      </button>
+                    </td>
+                    <td>
+                      <button
+                        onClick={() => toggleReviewFlag(rev.id, 'isPublic', !rev.isPublic)}
+                        style={{
+                          padding: '4px 12px', borderRadius: 8, border: 'none',
+                          background: rev.isPublic ? '#10b981' : '#ef4444', color: '#fff',
+                          fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'Fredoka, sans-serif',
+                        }}
+                      >
+                        {rev.isPublic ? 'Yes' : 'No'}
+                      </button>
+                    </td>
+                    <td>
+                      <button
+                        onClick={() => toggleReviewFlag(rev.id, 'isFeatured', !rev.isFeatured)}
+                        style={{
+                          padding: '4px 12px', borderRadius: 8, border: 'none',
+                          background: rev.isFeatured ? '#7c3aed' : '#d1d5db', color: rev.isFeatured ? '#fff' : '#374151',
+                          fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'Fredoka, sans-serif',
+                        }}
+                      >
+                        {rev.isFeatured ? '★ Yes' : 'No'}
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+      )}
+
+      {/* Search + Date Filter */}
+      {activeTab === 'orders' && (
+        <div className="admin-search-bar">
+          <div className="search-input-wrap">
+            <span className="search-icon">&#128269;</span>
+            <input
+              type="text"
+              className="search-input"
+              placeholder="Search orders, customers, recipients..."
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Enter') { setSearch(searchInput); setPage(1); } }}
+            />
+            {(search || searchInput) && (
+              <button className="search-clear" onClick={() => { setSearchInput(''); setSearch(''); setPage(1); }}>&#x2715;</button>
+            )}
+          </div>
+          <div className="date-filter-wrap">
+            <label className="date-label">
+              From
+              <input type="date" className="date-input" value={dateFrom} onChange={(e) => { setDateFrom(e.target.value); setPage(1); }} />
+            </label>
+            <label className="date-label">
+              To
+              <input type="date" className="date-input" value={dateTo} onChange={(e) => { setDateTo(e.target.value); setPage(1); }} />
+            </label>
+            {(dateFrom || dateTo) && (
+              <button className="search-clear" onClick={() => { setDateFrom(''); setDateTo(''); setPage(1); }}>Clear dates</button>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Status Filters */}
+      {activeTab === 'orders' && <div className="admin-filters">
         {['all', ...STATUS_OPTIONS].map((st) => (
           <button
             key={st}
@@ -398,7 +604,7 @@ export default function AdminDashboard() {
       </div>}
 
       {/* Orders Table */}
-      {!showLeads && <div className="admin-table-wrap">
+      {activeTab === 'orders' && <div className="admin-table-wrap">
         {loading ? (
           <p className="admin-loading">Loading orders...</p>
         ) : orders.length === 0 ? (
@@ -442,10 +648,19 @@ export default function AdminDashboard() {
                   </td>
                   <td>{new Date(order.createdAt).toLocaleDateString()}</td>
                   <td>
-                    {(WORKFLOW_STEPS[order.status] || []).slice(0, 1).map((a) => (
+                    {(WORKFLOW_STEPS[order.status] || []).slice(0, 1)
+                      .filter((a) => !(a.next === '__request_review' && reviewRequested.has(order.id)))
+                      .map((a) => (
                       <button
                         key={a.next}
-                        onClick={(e) => { e.stopPropagation(); updateStatus(order.id, a.next); }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (a.next === '__request_review') {
+                            requestReview(order.id);
+                          } else {
+                            updateStatus(order.id, a.next);
+                          }
+                        }}
                         style={{
                           padding: '5px 12px', background: a.color, color: '#fff',
                           border: 'none', borderRadius: 8, fontSize: 12, fontWeight: 600,
@@ -455,6 +670,9 @@ export default function AdminDashboard() {
                         {a.icon} {a.label}
                       </button>
                     ))}
+                    {order.status === 'delivered' && reviewRequested.has(order.id) && (
+                      <span style={{ fontSize: 12, color: '#10b981', fontWeight: 600 }}>Review requested</span>
+                    )}
                     {(!WORKFLOW_STEPS[order.status] || WORKFLOW_STEPS[order.status].length === 0) && (
                       <span style={{ fontSize: 12, color: '#9ca3af' }}>—</span>
                     )}
@@ -848,7 +1066,9 @@ const WORKFLOW_STEPS: Record<string, { label: string; next: string; color: strin
   completed: [
     { label: 'Deliver to Customer', next: 'delivered', color: '#059669', icon: '📦' },
   ],
-  delivered: [],
+  delivered: [
+    { label: 'Request Review', next: '__request_review', color: '#f59e0b', icon: '⭐' },
+  ],
   refunded: [],
   cancelled: [],
 };

@@ -30,6 +30,7 @@ export async function GET() {
       occasion: r.occasion,
       isApproved: r.isApproved,
       isPublic: r.isPublic,
+      isFeatured: r.isFeatured,
       createdAt: r.createdAt,
     })),
   });
@@ -43,13 +44,19 @@ export async function PATCH(request: NextRequest) {
   }
 
   try {
-    const { reviewId, isApproved, isPublic } = await request.json();
+    const { reviewId, isApproved, isPublic, isFeatured } = await request.json();
 
     if (!reviewId) {
       return NextResponse.json({ error: 'reviewId is required' }, { status: 400 });
     }
-    if (typeof isApproved !== 'boolean' || typeof isPublic !== 'boolean') {
-      return NextResponse.json({ error: 'isApproved and isPublic must be booleans' }, { status: 400 });
+
+    const data: any = {};
+    if (typeof isApproved === 'boolean') data.isApproved = isApproved;
+    if (typeof isPublic === 'boolean') data.isPublic = isPublic;
+    if (typeof isFeatured === 'boolean') data.isFeatured = isFeatured;
+
+    if (Object.keys(data).length === 0) {
+      return NextResponse.json({ error: 'No valid fields to update' }, { status: 400 });
     }
 
     const existing = await prisma.review.findUnique({ where: { id: reviewId } });
@@ -59,7 +66,7 @@ export async function PATCH(request: NextRequest) {
 
     const updated = await prisma.review.update({
       where: { id: reviewId },
-      data: { isApproved, isPublic },
+      data,
     });
 
     return NextResponse.json({ success: true, review: updated });
