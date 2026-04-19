@@ -18,6 +18,7 @@ interface OrderRow {
   createdAt: string;
   customer: { name: string; email: string };
   creator: { name: string; email: string } | null;
+  review: { id: string } | null;
 }
 
 interface Stats {
@@ -649,7 +650,7 @@ export default function AdminDashboard() {
                   <td>{new Date(order.createdAt).toLocaleDateString()}</td>
                   <td>
                     {(WORKFLOW_STEPS[order.status] || []).slice(0, 1)
-                      .filter((a) => !(a.next === '__request_review' && reviewRequested.has(order.id)))
+                      .filter((a) => !(a.next === '__request_review' && (reviewRequested.has(order.id) || order.review)))
                       .map((a) => (
                       <button
                         key={a.next}
@@ -670,8 +671,11 @@ export default function AdminDashboard() {
                         {a.icon} {a.label}
                       </button>
                     ))}
-                    {order.status === 'delivered' && reviewRequested.has(order.id) && (
-                      <span style={{ fontSize: 12, color: '#10b981', fontWeight: 600 }}>Review requested</span>
+                    {order.status === 'delivered' && order.review && (
+                      <span style={{ fontSize: 12, color: '#10b981', fontWeight: 600 }}>Review received</span>
+                    )}
+                    {order.status === 'delivered' && !order.review && reviewRequested.has(order.id) && (
+                      <span style={{ fontSize: 12, color: '#f59e0b', fontWeight: 600 }}>Review requested</span>
                     )}
                     {(!WORKFLOW_STEPS[order.status] || WORKFLOW_STEPS[order.status].length === 0) && (
                       <span style={{ fontSize: 12, color: '#9ca3af' }}>—</span>

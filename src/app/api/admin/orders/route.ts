@@ -56,6 +56,7 @@ export async function GET(request: NextRequest) {
       include: {
         customer: { select: { name: true, email: true } },
         creator: { select: { name: true, email: true } },
+        review: { select: { id: true } },
       },
     }),
     prisma.order.count({ where }),
