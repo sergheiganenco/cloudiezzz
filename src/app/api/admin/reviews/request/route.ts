@@ -42,6 +42,17 @@ export async function POST(request: NextRequest) {
       recName: order.recName,
     });
 
+    // Log it in status history
+    await prisma.orderStatusUpdate.create({
+      data: {
+        orderId: order.id,
+        fromStatus: order.status,
+        toStatus: order.status,
+        note: `Review request email sent to ${order.buyerEmail}`,
+        changedById: user!.id,
+      },
+    });
+
     return NextResponse.json({ success: true });
   } catch {
     return NextResponse.json({ error: 'Failed to send review request' }, { status: 500 });
