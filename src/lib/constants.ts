@@ -39,8 +39,8 @@ export const PACKAGES: Package[] = [
     name: 'Business',
     wasPrice: 0,
     nowPrice: 299,
-    description: 'Brief call, licensing, stems, jingles, brands.',
-    features: ['Brief call', 'Licensing', 'Stems', 'Jingles & brands', '5-day turnaround'],
+    description: 'Commercial license, discovery call, multiple cuts for ads & brands.',
+    features: ['Commercial licensing', 'Discovery call', '3 versions (full + short cuts)', 'Unlimited revisions', 'Priority 5-day delivery'],
   },
 ];
 
