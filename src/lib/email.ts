@@ -373,6 +373,39 @@ export async function sendReviewRequest(order: {
   });
 }
 
+// ─── Admin alert: new review submitted ─────────────────────────────
+export async function sendAdminReviewAlert(data: {
+  orderNumber: string;
+  buyerName: string;
+  rating: number;
+  content: string;
+}) {
+  const adminEmail = process.env.ADMIN_EMAIL || 'admin@cloudiezzz.com';
+  const adminUrl = `${APP_URL}/admin`;
+
+  await sendEmail({
+    to: adminEmail,
+    subject: `New ${data.rating}-star review from ${data.buyerName}`,
+    html: wrap(`
+      <h2 style="color:#2a2418;font-size:20px;margin:0 0 16px;">New Review Received</h2>
+      <p style="color:#5d5346;font-size:15px;line-height:1.6;">
+        <strong>${data.buyerName}</strong> left a <strong>${'★'.repeat(data.rating)}${'☆'.repeat(5 - data.rating)}</strong> review on order <strong>${data.orderNumber}</strong>.
+      </p>
+      <div style="background:#faf7f2;border-left:3px solid #fbbf24;border-radius:8px;padding:12px 16px;margin:16px 0;">
+        <p style="color:#5d5346;font-size:14px;font-style:italic;margin:0;">"${data.content.length > 200 ? data.content.slice(0, 200) + '...' : data.content}"</p>
+      </div>
+      <p style="color:#8b7e6e;font-size:13px;">
+        Go to the Reviews tab to approve and publish this review.
+      </p>
+      <div style="text-align:center;margin:24px 0;">
+        <a href="${adminUrl}" style="display:inline-block;padding:12px 32px;background:#422006;color:#fef08a;border-radius:10px;text-decoration:none;font-weight:600;font-size:15px;">
+          Review in Dashboard
+        </a>
+      </div>
+    `),
+  });
+}
+
 // ─── Delivery with gift link ────────────────────────────────────────
 export async function sendDeliveryEmail(order: {
   buyerEmail: string;

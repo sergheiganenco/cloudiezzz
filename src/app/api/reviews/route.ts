@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
+import { sendAdminReviewAlert } from '@/lib/email';
 
 // GET: Public approved reviews with cursor pagination + featured filter
 export async function GET(request: NextRequest) {
@@ -80,6 +81,14 @@ export async function POST(request: NextRequest) {
         isPublic: false,
       },
     });
+
+    // Notify admin
+    sendAdminReviewAlert({
+      orderNumber: order.orderNumber,
+      buyerName: order.buyerName,
+      rating: review.rating,
+      content: review.content,
+    }).catch(() => {});
 
     return NextResponse.json({ success: true, reviewId: review.id });
   } catch {
