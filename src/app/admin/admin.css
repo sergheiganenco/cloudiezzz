@@ -441,8 +441,10 @@
   left: 14px;
   top: 50%;
   transform: translateY(-50%);
-  font-size: 16px;
+  font-size: 14px;
   pointer-events: none;
+  color: var(--ink-mute);
+  z-index: 1;
 }
 .search-input {
   width: 100%;
