@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { getSessionUser, requireRole } from '@/lib/auth';
-import { put, del } from '@vercel/blob';
+import { del } from '@vercel/blob';
+import { handleUpload, type HandleUploadBody } from '@vercel/blob/client';
 
 const ALLOWED_FILE_TYPES = ['draft', 'final', 'stem', 'lyric_video', 'lyric_card'];
-const MAX_FILE_SIZE = 25 * 1024 * 1024; // 25MB for audio/video files
+const MAX_FILE_SIZE = 100 * 1024 * 1024; // 100MB — audio/video songs
 
 export async function GET(
   request: NextRequest,
@@ -25,6 +26,10 @@ export async function GET(
   return NextResponse.json({ files });
 }
 
+// POST: mints a short-lived client-upload token so the browser can upload the
+// file DIRECTLY to Vercel Blob. This bypasses the ~4.5MB serverless request
+// body limit that previously broke real audio uploads. The browser then calls
+// the /register endpoint to record the file in the DB.
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -36,49 +41,43 @@ export async function POST(
 
   const { id } = await params;
 
-  const order = await prisma.order.findUnique({
-    where: { id },
-    select: { id: true, orderNumber: true },
-  });
-
+  const order = await prisma.order.findUnique({ where: { id }, select: { id: true } });
   if (!order) {
     return NextResponse.json({ error: 'Order not found' }, { status: 404 });
   }
 
-  const formData = await request.formData();
-  const file = formData.get('file') as File | null;
-  const fileType = formData.get('fileType') as string | null;
+  const body = (await request.json()) as HandleUploadBody;
 
-  if (!file || !fileType) {
-    return NextResponse.json({ error: 'File and fileType are required' }, { status: 400 });
+  try {
+    const jsonResponse = await handleUpload({
+      body,
+      request,
+      onBeforeGenerateToken: async (_pathname, clientPayload) => {
+        let fileType = 'draft';
+        try {
+          fileType = JSON.parse(clientPayload || '{}').fileType || 'draft';
+        } catch {
+          // keep default
+        }
+        if (!ALLOWED_FILE_TYPES.includes(fileType)) {
+          throw new Error(`Invalid fileType. Must be one of: ${ALLOWED_FILE_TYPES.join(', ')}`);
+        }
+        return {
+          addRandomSuffix: true,
+          maximumSizeInBytes: MAX_FILE_SIZE,
+          tokenPayload: JSON.stringify({ orderId: id, fileType }),
+        };
+      },
+      // The DB record is created by the /register endpoint once the browser
+      // upload resolves (reliable in both dev and production). No-op here.
+      onUploadCompleted: async () => {},
+    });
+
+    return NextResponse.json(jsonResponse);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Upload authorization failed';
+    return NextResponse.json({ error: message }, { status: 400 });
   }
-
-  if (!ALLOWED_FILE_TYPES.includes(fileType)) {
-    return NextResponse.json({ error: `Invalid fileType. Must be one of: ${ALLOWED_FILE_TYPES.join(', ')}` }, { status: 400 });
-  }
-
-  if (file.size > MAX_FILE_SIZE) {
-    return NextResponse.json({ error: 'File too large (max 25MB)' }, { status: 400 });
-  }
-
-  // Upload to Vercel Blob
-  const blobPath = `orders/${order.orderNumber}/${fileType}/${file.name}`;
-  const blob = await put(blobPath, file, {
-    access: 'public',
-    addRandomSuffix: true,
-  });
-
-  const orderFile = await prisma.orderFile.create({
-    data: {
-      orderId: id,
-      fileName: file.name,
-      fileUrl: blob.url,
-      fileType,
-      fileSize: file.size,
-    },
-  });
-
-  return NextResponse.json({ file: orderFile }, { status: 201 });
 }
 
 export async function DELETE(

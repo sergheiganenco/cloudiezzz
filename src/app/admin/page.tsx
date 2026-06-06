@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
+import { upload } from '@vercel/blob/client';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 interface OrderRow {
@@ -225,16 +226,29 @@ export default function AdminDashboard() {
 
     setUploading(true);
     try {
-      const formData = new FormData();
-      formData.append('file', file);
-      formData.append('fileType', uploadFileType);
-      const res = await fetch(`/api/admin/orders/${selectedOrder}/files`, {
+      // 1) Upload straight from the browser to Vercel Blob. The server route
+      //    only mints a token, so this bypasses the ~4.5MB serverless body
+      //    limit that blocked real audio files.
+      const blob = await upload(`orders/${selectedOrder}/${uploadFileType}/${file.name}`, file, {
+        access: 'public',
+        handleUploadUrl: `/api/admin/orders/${selectedOrder}/files`,
+        clientPayload: JSON.stringify({ fileType: uploadFileType }),
+      });
+
+      // 2) Record the uploaded file in the database.
+      const res = await fetch(`/api/admin/orders/${selectedOrder}/files/register`, {
         method: 'POST',
-        body: formData,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          fileName: file.name,
+          fileUrl: blob.url,
+          fileType: uploadFileType,
+          fileSize: file.size,
+        }),
       });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
-        showToast(err.error || 'File upload failed. Please try again.');
+        showToast(err.error || 'File uploaded to storage but could not be saved.');
         return;
       }
       fileInput.value = '';
@@ -257,8 +271,9 @@ export default function AdminDashboard() {
       } else {
         showToast('File uploaded.', 'success');
       }
-    } catch {
-      showToast('File upload failed. Please check your connection.');
+    } catch (err) {
+      const message = err instanceof Error ? err.message : '';
+      showToast(message ? `File upload failed: ${message}` : 'File upload failed. Please try again.');
     } finally {
       setUploading(false);
     }
