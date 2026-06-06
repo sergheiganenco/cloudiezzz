@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
+import { stripe } from '@/lib/stripe';
 import { getSessionUser, requireRole } from '@/lib/auth';
 import { sendStatusUpdate, sendDeliveryEmail, sendCreatorAssignment } from '@/lib/email';
 
@@ -50,9 +51,44 @@ export async function PATCH(
     return NextResponse.json({ error: 'Order not found' }, { status: 404 });
   }
 
+  // Issue a real Stripe refund when an order is moved into "refunded".
+  // We only let the status flip to refunded if the money actually moves (or
+  // there was no Stripe charge to begin with), so the order never claims a
+  // refund that didn't happen.
+  if (status === 'refunded' && order.status !== 'refunded') {
+    if (order.stripePaymentId) {
+      if (!stripe) {
+        return NextResponse.json(
+          { error: 'Stripe is not configured — cannot issue refund.' },
+          { status: 500 }
+        );
+      }
+      try {
+        await stripe.refunds.create({ payment_intent: order.stripePaymentId });
+        console.log(
+          `[REFUND] Order ${order.orderNumber} refunded via Stripe (${order.stripePaymentId})`
+        );
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Unknown error';
+        console.error(
+          `[REFUND FAILED] Order ${order.orderNumber} (${order.stripePaymentId}): ${message}`
+        );
+        return NextResponse.json({ error: `Refund failed: ${message}` }, { status: 502 });
+      }
+    } else {
+      // Paid manually / no Stripe charge on file — nothing to refund through Stripe.
+      console.warn(
+        `[REFUND] Order ${order.orderNumber} marked refunded with no Stripe payment on file — no money moved.`
+      );
+    }
+  }
+
   const updates: Record<string, unknown> = {};
   if (status && status !== order.status) {
     updates.status = status;
+    if (status === 'refunded') {
+      updates.paymentStatus = 'refunded';
+    }
 
     await prisma.orderStatusUpdate.create({
       data: {

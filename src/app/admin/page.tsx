@@ -241,16 +241,21 @@ export default function AdminDashboard() {
   };
 
   const updateStatus = async (orderId: string, newStatus: string) => {
-    await fetch(`/api/admin/orders/${orderId}`, {
+    const res = await fetch(`/api/admin/orders/${orderId}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ status: newStatus }),
     });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      alert(err.error || `Failed to update order to ${newStatus}.`);
+      return;
+    }
     loadOrders();
     // Refresh modal if this order is open
     if (selectedOrder === orderId) {
-      const res = await fetch(`/api/admin/orders/${orderId}`);
-      const d = await res.json();
+      const detailRes = await fetch(`/api/admin/orders/${orderId}`);
+      const d = await detailRes.json();
       setOrderDetail(d.order);
     }
   };
@@ -643,8 +648,8 @@ export default function AdminDashboard() {
                     </span>
                   </td>
                   <td>
-                    <span className="status-badge" style={{ background: order.paymentStatus === 'paid' ? '#10b981' : '#f59e0b' }}>
-                      {order.paymentStatus === 'paid' ? 'Paid' : 'Unpaid'}
+                    <span className="status-badge" style={{ background: order.paymentStatus === 'paid' ? '#10b981' : order.paymentStatus === 'refunded' ? '#ef4444' : '#f59e0b' }}>
+                      {order.paymentStatus === 'paid' ? 'Paid' : order.paymentStatus === 'refunded' ? 'Refunded' : 'Unpaid'}
                     </span>
                   </td>
                   <td>{new Date(order.createdAt).toLocaleDateString()}</td>
