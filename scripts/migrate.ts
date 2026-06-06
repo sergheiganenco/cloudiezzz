@@ -22,6 +22,13 @@ const client = createClient({ url, authToken });
 const migrations: string[] = [
   // Add isFeatured column to Review table
   `ALTER TABLE "Review" ADD COLUMN "isFeatured" BOOLEAN NOT NULL DEFAULT false`,
+  // Performance indexes on Order
+  `CREATE INDEX IF NOT EXISTS "Order_paymentStatus_idx" ON "Order"("paymentStatus")`,
+  `CREATE INDEX IF NOT EXISTS "Order_creatorId_status_idx" ON "Order"("creatorId", "status")`,
+  `CREATE INDEX IF NOT EXISTS "Order_createdAt_idx" ON "Order"("createdAt")`,
+  // Unique constraints on Stripe identifiers (prevents double-processing a payment)
+  `CREATE UNIQUE INDEX IF NOT EXISTS "Order_stripeSessionId_key" ON "Order"("stripeSessionId")`,
+  `CREATE UNIQUE INDEX IF NOT EXISTS "Order_stripePaymentId_key" ON "Order"("stripePaymentId")`,
 ];
 
 async function run() {
@@ -32,12 +39,18 @@ async function run() {
       await client.execute(sql);
       console.log(`[migrate] OK: ${sql.slice(0, 60)}...`);
     } catch (err: any) {
-      // "duplicate column" means it already exists — that's fine
-      if (err.message?.includes("duplicate column") || err.message?.includes("already exists")) {
+      const msg = err.message || "";
+      // "duplicate column" / "already exists" means it's already applied — that's fine
+      if (msg.includes("duplicate column") || msg.includes("already exists")) {
         console.log(`[migrate] SKIP (already exists): ${sql.slice(0, 60)}...`);
+      } else if (sql.startsWith("CREATE")) {
+        // Index creation failures (e.g. pre-existing duplicate data for a new
+        // unique index) shouldn't block a deploy — warn loudly and move on.
+        console.warn(`[migrate] WARN (index not applied): ${sql.slice(0, 60)}...`);
+        console.warn(msg);
       } else {
         console.error(`[migrate] FAIL: ${sql.slice(0, 60)}...`);
-        console.error(err.message);
+        console.error(msg);
         process.exit(1);
       }
     }

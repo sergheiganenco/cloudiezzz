@@ -12,7 +12,8 @@ export async function GET(
     include: {
       statusUpdates: { orderBy: { createdAt: 'desc' } },
       files: {
-        where: { fileType: { in: ['final', 'lyric_video'] } },
+        // 'draft' is included so customers can listen during the review step.
+        where: { fileType: { in: ['draft', 'final', 'lyric_video'] } },
         orderBy: { createdAt: 'desc' },
       },
       messages: { orderBy: { createdAt: 'asc' } },

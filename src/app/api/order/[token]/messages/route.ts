@@ -36,6 +36,14 @@ export async function POST(
     return NextResponse.json({ error: 'Content is required' }, { status: 400 });
   }
 
+  const trimmed = content.trim();
+  if (trimmed.length === 0) {
+    return NextResponse.json({ error: 'Message cannot be empty' }, { status: 400 });
+  }
+  if (trimmed.length > 2000) {
+    return NextResponse.json({ error: 'Message is too long (max 2000 characters)' }, { status: 400 });
+  }
+
   const order = await prisma.order.findUnique({
     where: { accessToken: token },
     select: { id: true, orderNumber: true, buyerName: true },
@@ -50,7 +58,7 @@ export async function POST(
       orderId: order.id,
       senderId: null,
       senderType: 'customer',
-      content: sanitize(content),
+      content: sanitize(trimmed),
     },
   });
 
@@ -58,7 +66,7 @@ export async function POST(
   sendAdminMessageAlert({
     orderNumber: order.orderNumber,
     buyerName: order.buyerName || 'Customer',
-    messagePreview: content.substring(0, 200),
+    messagePreview: trimmed.substring(0, 200),
   }).catch((err: unknown) => console.error('Admin message alert failed:', err));
 
   return NextResponse.json({ message }, { status: 201 });

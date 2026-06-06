@@ -78,7 +78,31 @@ export default function ReviewCarousel() {
       });
   }, []);
 
-  if (!loaded) return null;
+  if (!loaded) {
+    return (
+      <section className="review-carousel-section" id="reviews">
+        <div className="section-eyebrow">Loved By Customers</div>
+        <h2>
+          What people are <em>saying</em>
+        </h2>
+        <div className="sub">Real stories from people who got their perfect song</div>
+        <div className="carousel-skeleton">
+          {[0, 1, 2].map((i) => (
+            <div className="review review-skeleton" key={i}>
+              <div className="skeleton-line" style={{ width: '40%' }} />
+              <div className="skeleton-line" />
+              <div className="skeleton-line" />
+              <div className="skeleton-line" style={{ width: '70%' }} />
+              <div className="skeleton-author">
+                <div className="skeleton-avatar" />
+                <div className="skeleton-line" style={{ width: '50%' }} />
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section className="review-carousel-section" id="reviews">

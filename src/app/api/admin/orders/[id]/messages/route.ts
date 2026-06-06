@@ -47,6 +47,14 @@ export async function POST(
     return NextResponse.json({ error: 'Content is required' }, { status: 400 });
   }
 
+  const trimmed = content.trim();
+  if (trimmed.length === 0) {
+    return NextResponse.json({ error: 'Message cannot be empty' }, { status: 400 });
+  }
+  if (trimmed.length > 2000) {
+    return NextResponse.json({ error: 'Message is too long (max 2000 characters)' }, { status: 400 });
+  }
+
   const order = await prisma.order.findUnique({
     where: { id },
     select: {
@@ -55,6 +63,7 @@ export async function POST(
       buyerName: true,
       orderNumber: true,
       accessToken: true,
+      creatorId: true,
     },
   });
 
@@ -62,12 +71,17 @@ export async function POST(
     return NextResponse.json({ error: 'Order not found' }, { status: 404 });
   }
 
+  // Creators may only message on orders assigned to them
+  if (user!.role === 'creator' && order.creatorId !== user!.id) {
+    return NextResponse.json({ error: 'You are not assigned to this order' }, { status: 403 });
+  }
+
   const message = await prisma.orderMessage.create({
     data: {
       orderId: order.id,
       senderId: user!.id,
       senderType: user!.role,
-      content: sanitize(content),
+      content: sanitize(trimmed),
     },
   });
 
@@ -77,7 +91,7 @@ export async function POST(
     buyerName: order.buyerName || 'there',
     orderNumber: order.orderNumber,
     accessToken: order.accessToken,
-    messagePreview: content,
+    messagePreview: trimmed,
   }).catch((err: unknown) => console.error('Message notification email failed:', err));
 
   return NextResponse.json({ message }, { status: 201 });

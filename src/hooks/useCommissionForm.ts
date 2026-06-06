@@ -101,6 +101,26 @@ export function useCommissionForm() {
     }
   }, [step, formData]);
 
+  // Warn before leaving with unsaved progress (steps 1-6, not yet submitted)
+  useEffect(() => {
+    const hasProgress =
+      !!formData.package ||
+      !!formData.buyer_name.trim() ||
+      !!formData.buyer_email.trim() ||
+      !!formData.rec_name.trim() ||
+      !!formData.memories.trim() ||
+      formData.genre.length > 0;
+
+    if (accessToken || step > 6 || !hasProgress) return;
+
+    const handler = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = '';
+    };
+    window.addEventListener('beforeunload', handler);
+    return () => window.removeEventListener('beforeunload', handler);
+  }, [formData, step, accessToken]);
+
   // Debounced lead capture — fire when email looks valid (steps 1-6)
   const lastSavedLeadEmail = useRef('');
   useEffect(() => {
@@ -373,68 +393,78 @@ export function useCommissionForm() {
     const langObj = LANGUAGES.find((l) => l.code === fd.language);
     const selectedAddons = ADDONS.filter((a) => fd.addons.includes(a.id));
 
+    // Escape any user-provided value before it goes into the brief (rendered
+    // via dangerouslySetInnerHTML). Only the hard-coded <b> headers are HTML.
+    const esc = (v: string) =>
+      v
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#x27;');
+
     const lines: string[] = [];
 
     lines.push('<b>Package</b>');
-    lines.push(pkg ? `${pkg.name} (${formatCurrency(pkg.nowPrice)}) - ${pkgTime}` : 'None selected');
+    lines.push(pkg ? `${esc(pkg.name)} (${formatCurrency(pkg.nowPrice)}) - ${esc(pkgTime)}` : 'None selected');
     lines.push('');
 
     lines.push('<b>Buyer</b>');
-    lines.push(`${fd.buyer_name || '-'} / ${fd.buyer_email || '-'}`);
-    if (fd.buyer_phone) lines.push(`Phone: ${fd.buyer_phone}`);
-    if (fd.due_date) lines.push(`Due: ${fd.due_date}`);
+    lines.push(`${esc(fd.buyer_name || '-')} / ${esc(fd.buyer_email || '-')}`);
+    if (fd.buyer_phone) lines.push(`Phone: ${esc(fd.buyer_phone)}`);
+    if (fd.due_date) lines.push(`Due: ${esc(fd.due_date)}`);
     lines.push('');
 
     lines.push('<b>Recipient</b>');
-    lines.push(`${fd.rec_name || '-'}${fd.rec_age ? `, age ${fd.rec_age}` : ''}`);
-    if (fd.relationship) lines.push(`Relationship: ${fd.relationship}`);
-    if (fd.occasion) lines.push(`Occasion: ${fd.occasion}`);
-    if (fd.others) lines.push(`Others: ${fd.others}`);
+    lines.push(`${esc(fd.rec_name || '-')}${fd.rec_age ? `, age ${esc(fd.rec_age)}` : ''}`);
+    if (fd.relationship) lines.push(`Relationship: ${esc(fd.relationship)}`);
+    if (fd.occasion) lines.push(`Occasion: ${esc(fd.occasion)}`);
+    if (fd.others) lines.push(`Others: ${esc(fd.others)}`);
     lines.push('');
 
     lines.push('<b>Story</b>');
-    if (fd.how_met) lines.push(`How met: ${fd.how_met}`);
-    if (fd.memories) lines.push(`Memories: ${fd.memories}`);
-    if (fd.love_about) lines.push(`Love about them: ${fd.love_about}`);
-    if (fd.feeling) lines.push(`Feeling: ${fd.feeling}`);
-    if (fd.one_line) lines.push(`One line: ${fd.one_line}`);
-    if (fd.avoid) lines.push(`Avoid: ${fd.avoid}`);
+    if (fd.how_met) lines.push(`How met: ${esc(fd.how_met)}`);
+    if (fd.memories) lines.push(`Memories: ${esc(fd.memories)}`);
+    if (fd.love_about) lines.push(`Love about them: ${esc(fd.love_about)}`);
+    if (fd.feeling) lines.push(`Feeling: ${esc(fd.feeling)}`);
+    if (fd.one_line) lines.push(`One line: ${esc(fd.one_line)}`);
+    if (fd.avoid) lines.push(`Avoid: ${esc(fd.avoid)}`);
     lines.push('');
 
     lines.push('<b>Sound</b>');
-    if (moodObj) lines.push(`Mood: ${moodObj.emoji} ${moodObj.label}`);
-    if (fd.genre.length > 0) lines.push(`Genres: ${fd.genre.join(', ')}`);
-    if (langObj) lines.push(`Language: ${langObj.flag} ${langObj.name}`);
-    if (fd.vocal) lines.push(`Vocal: ${fd.vocal}`);
-    if (fd.references) lines.push(`References: ${fd.references}`);
+    if (moodObj) lines.push(`Mood: ${moodObj.emoji} ${esc(moodObj.label)}`);
+    if (fd.genre.length > 0) lines.push(`Genres: ${esc(fd.genre.join(', '))}`);
+    if (langObj) lines.push(`Language: ${langObj.flag} ${esc(langObj.name)}`);
+    if (fd.vocal) lines.push(`Vocal: ${esc(fd.vocal)}`);
+    if (fd.references) lines.push(`References: ${esc(fd.references)}`);
     lines.push('');
 
     lines.push('<b>Lyrics</b>');
-    if (fd.must_include) lines.push(`Must include: ${fd.must_include}`);
-    if (fd.catchphrase) lines.push(`Catchphrase: ${fd.catchphrase}`);
-    if (fd.credit) lines.push(`Credit: ${fd.credit}`);
-    if (fd.lyric_tone) lines.push(`Tone: ${fd.lyric_tone}`);
-    if (fd.rating) lines.push(`Rating: ${fd.rating}`);
-    if (fd.approve) lines.push(`Approval: ${fd.approve}`);
+    if (fd.must_include) lines.push(`Must include: ${esc(fd.must_include)}`);
+    if (fd.catchphrase) lines.push(`Catchphrase: ${esc(fd.catchphrase)}`);
+    if (fd.credit) lines.push(`Credit: ${esc(fd.credit)}`);
+    if (fd.lyric_tone) lines.push(`Tone: ${esc(fd.lyric_tone)}`);
+    if (fd.rating) lines.push(`Rating: ${esc(fd.rating)}`);
+    if (fd.approve) lines.push(`Approval: ${esc(fd.approve)}`);
     lines.push('');
 
     if (selectedAddons.length > 0) {
       lines.push('<b>Add-ons</b>');
       selectedAddons.forEach((a) => {
         const priceLabel = a.id === 'rush' ? '+50%' : formatCurrency(a.price);
-        lines.push(`${a.label} (${priceLabel})`);
+        lines.push(`${esc(a.label)} (${priceLabel})`);
       });
       lines.push('');
     }
 
     if (fd.anything_else) {
       lines.push('<b>Additional notes</b>');
-      lines.push(fd.anything_else);
+      lines.push(esc(fd.anything_else));
       lines.push('');
     }
 
     if (fd.couponCode) {
-      lines.push(`<b>Coupon:</b> ${fd.couponCode} (-${fd.discountPercent}%)`);
+      lines.push(`<b>Coupon:</b> ${esc(fd.couponCode)} (-${fd.discountPercent}%)`);
     }
 
     return lines.join('\n');

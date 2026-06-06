@@ -48,8 +48,8 @@ model Order {
   status        String   @default("pending") // pending | paid | in_progress | review | revision | completed | delivered | refunded | cancelled
 
   // Stripe
-  stripeSessionId  String?
-  stripePaymentId  String?
+  stripeSessionId  String?  @unique
+  stripePaymentId  String?  @unique
   paymentStatus    String   @default("unpaid") // unpaid | paid | refunded
 
   // Package & pricing
@@ -122,6 +122,9 @@ model Order {
   @@index([status])
   @@index([customerId])
   @@index([creatorId])
+  @@index([paymentStatus])
+  @@index([creatorId, status])
+  @@index([createdAt])
 }
 
 // ─── Order Status History ───────────────────────────────────────────

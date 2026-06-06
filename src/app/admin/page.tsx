@@ -92,6 +92,13 @@ export default function AdminDashboard() {
     confirmColor: string;
     onConfirm: () => void;
   } | null>(null);
+  const [toasts, setToasts] = useState<{ id: number; message: string; type: 'success' | 'error' }[]>([]);
+
+  const showToast = useCallback((message: string, type: 'success' | 'error' = 'error') => {
+    const id = Date.now() + Math.random();
+    setToasts((prev) => [...prev, { id, message, type }]);
+    setTimeout(() => setToasts((prev) => prev.filter((t) => t.id !== id)), 4000);
+  }, []);
 
   useEffect(() => {
     fetch('/api/auth/me')
@@ -199,10 +206,10 @@ export default function AdminDashboard() {
       if (data.success) {
         setSunoData({ title: data.title || '', style: data.style || '', lyrics: data.lyrics || '' });
       } else {
-        alert(data.error || 'Failed to generate Suno content');
+        showToast(data.error || 'Failed to generate Suno content');
       }
     } catch {
-      alert('Failed to generate Suno content');
+      showToast('Failed to generate Suno content');
     } finally {
       setSunoLoading(false);
     }
@@ -221,14 +228,20 @@ export default function AdminDashboard() {
       const formData = new FormData();
       formData.append('file', file);
       formData.append('fileType', uploadFileType);
-      await fetch(`/api/admin/orders/${selectedOrder}/files`, {
+      const res = await fetch(`/api/admin/orders/${selectedOrder}/files`, {
         method: 'POST',
         body: formData,
       });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        showToast(err.error || 'File upload failed. Please try again.');
+        return;
+      }
       fileInput.value = '';
       refreshOrderDetail();
+      showToast('File uploaded.', 'success');
     } catch {
-      // silently fail
+      showToast('File upload failed. Please check your connection.');
     } finally {
       setUploading(false);
     }
@@ -244,12 +257,18 @@ export default function AdminDashboard() {
       onConfirm: async () => {
         setConfirmAction(null);
         try {
-          await fetch(`/api/admin/orders/${selectedOrder}/files?fileId=${fileId}`, {
+          const res = await fetch(`/api/admin/orders/${selectedOrder}/files?fileId=${fileId}`, {
             method: 'DELETE',
           });
+          if (!res.ok) {
+            const err = await res.json().catch(() => ({}));
+            showToast(err.error || 'Failed to delete file.');
+            return;
+          }
           refreshOrderDetail();
+          showToast('File deleted.', 'success');
         } catch {
-          // silently fail
+          showToast('Failed to delete file. Please check your connection.');
         }
       },
     });
@@ -274,7 +293,7 @@ export default function AdminDashboard() {
     });
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
-      alert(err.error || `Failed to update order to ${newStatus}.`);
+      showToast(err.error || `Failed to update order to ${newStatus}.`);
       return;
     }
     loadOrders();
@@ -302,7 +321,7 @@ export default function AdminDashboard() {
       const d = await res.json();
       setOrderDetail(d.order);
     } catch {
-      // silently fail
+      showToast('Failed to send message. Please try again.');
     } finally {
       setSendingMsg(false);
     }
@@ -324,11 +343,12 @@ export default function AdminDashboard() {
       const data = await res.json();
       if (data.success) {
         setReviewRequested((prev) => new Set(prev).add(orderId));
+        showToast('Review request sent to the customer.', 'success');
       } else {
-        alert(data.error || 'Failed to send review request');
+        showToast(data.error || 'Failed to send review request');
       }
     } catch {
-      alert('Failed to send review request');
+      showToast('Failed to send review request');
     }
   };
 
@@ -341,12 +361,12 @@ export default function AdminDashboard() {
       });
       const data = await res.json();
       if (data.success) {
-        alert('Order confirmation email re-sent to the customer.');
+        showToast('Order confirmation email re-sent to the customer.', 'success');
       } else {
-        alert(data.error || 'Failed to resend confirmation');
+        showToast(data.error || 'Failed to resend confirmation');
       }
     } catch {
-      alert('Failed to resend confirmation');
+      showToast('Failed to resend confirmation');
     }
   };
 
@@ -370,6 +390,30 @@ export default function AdminDashboard() {
 
   return (
     <div className="admin-page">
+      {/* Toasts */}
+      {toasts.length > 0 && (
+        <div style={{ position: 'fixed', top: 20, right: 20, zIndex: 2000, display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {toasts.map((t) => (
+            <div
+              key={t.id}
+              role="status"
+              style={{
+                padding: '12px 18px',
+                borderRadius: 12,
+                background: t.type === 'success' ? '#10b981' : '#ef4444',
+                color: '#fff',
+                fontSize: 14,
+                fontWeight: 600,
+                fontFamily: 'Fredoka, sans-serif',
+                boxShadow: '0 4px 16px rgba(0,0,0,0.2)',
+                maxWidth: 340,
+              }}
+            >
+              {t.message}
+            </div>
+          ))}
+        </div>
+      )}
       {/* Header */}
       <header className="admin-header">
         <div style={{ display: 'flex', alignItems: 'center' }}>

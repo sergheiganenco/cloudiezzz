@@ -51,6 +51,21 @@ export async function PATCH(
     return NextResponse.json({ error: 'Order not found' }, { status: 404 });
   }
 
+  // Creators may only act on orders assigned to them, and cannot perform
+  // admin-only actions (assigning creators, refunding, delivering, cancelling).
+  if (user!.role === 'creator') {
+    if (order.creatorId !== user!.id) {
+      return NextResponse.json({ error: 'You are not assigned to this order' }, { status: 403 });
+    }
+    if (creatorId !== undefined) {
+      return NextResponse.json({ error: 'Only admins can assign creators' }, { status: 403 });
+    }
+    const adminOnlyStatuses = ['refunded', 'delivered', 'cancelled'];
+    if (status && adminOnlyStatuses.includes(status)) {
+      return NextResponse.json({ error: `Only admins can set status to "${status}"` }, { status: 403 });
+    }
+  }
+
   // Issue a real Stripe refund when an order is moved into "refunded".
   // We only let the status flip to refunded if the money actually moves (or
   // there was no Stripe charge to begin with), so the order never claims a

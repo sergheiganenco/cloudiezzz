@@ -635,6 +635,34 @@ footer span { color: var(--pink) }
 @media (max-width: 560px) {
   .carousel-btn { width: 36px; height: 36px; font-size: 20px }
 }
+/* Carousel loading skeleton */
+.carousel-skeleton {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;
+  max-width: 900px; margin: 0 auto;
+}
+@media (max-width: 900px) { .carousel-skeleton { grid-template-columns: repeat(2, 1fr) } }
+@media (max-width: 560px) { .carousel-skeleton { grid-template-columns: 1fr } }
+.review-skeleton { pointer-events: none }
+.review-skeleton:hover { transform: none }
+.skeleton-line {
+  height: 12px; border-radius: 6px; margin-bottom: 12px;
+  background: linear-gradient(90deg, var(--line) 25%, var(--line-soft) 50%, var(--line) 75%);
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.4s ease infinite;
+}
+.skeleton-author { display: flex; align-items: center; gap: 12px; margin-top: 18px }
+.skeleton-avatar {
+  width: 42px; height: 42px; border-radius: 50%; flex-shrink: 0;
+  background: linear-gradient(90deg, var(--line) 25%, var(--line-soft) 50%, var(--line) 75%);
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.4s ease infinite;
+}
+.skeleton-author .skeleton-line { margin-bottom: 0 }
+@keyframes skeleton-shimmer {
+  0% { background-position: 200% 0 }
+  100% { background-position: -200% 0 }
+}
+
 .carousel-dots {
   display: flex; justify-content: center; gap: 8px; margin-top: 24px;
 }
@@ -761,6 +789,9 @@ footer span { color: var(--pink) }
 .chat-widget {
   position: fixed; bottom: 24px; right: 24px; z-index: 999;
   font-family: 'Fredoka', sans-serif;
+}
+@media (max-width: 560px) {
+  .chat-widget { bottom: 16px; right: 16px }
 }
 .chat-toggle {
   width: 64px; height: 64px; border-radius: 50%;
@@ -1263,6 +1294,44 @@ footer span { color: var(--pink) }
   font-family: 'Dancing Script', cursive;
   font-size: 22px; color: var(--ink-soft); font-weight: 700;
 }
+
+/* ===== REVIEW CTA (public reviews page) ===== */
+.review-cta {
+  text-align: center; padding: 32px 20px;
+}
+.review-cta .big-heart {
+  font-size: 64px; color: var(--pink);
+  animation: bounce 2s infinite;
+  line-height: 1; margin-bottom: 12px;
+}
+.review-cta h3 {
+  font-family: 'Modak', cursive;
+  font-size: 40px; color: #fff;
+  -webkit-text-stroke: 1.5px var(--ink);
+  text-shadow: 3px 3px 0 var(--ink);
+  line-height: 1; margin-bottom: 16px;
+}
+.review-cta h3 em { font-style: normal; color: var(--pink); -webkit-text-stroke: 1.5px var(--ink) }
+.review-cta-text {
+  font-family: 'Nunito', sans-serif;
+  font-size: 16px; line-height: 1.6; color: var(--ink-soft);
+  max-width: 440px; margin: 0 auto 20px; font-weight: 500;
+}
+.review-cta-sub {
+  font-family: 'Dancing Script', cursive;
+  font-size: 20px; color: var(--ink-mute); font-weight: 700; margin-bottom: 12px;
+}
+.review-cta-btn {
+  display: inline-block;
+  background: var(--ink); color: var(--yellow);
+  border-radius: 99px; padding: 14px 32px;
+  font-family: 'Fredoka', sans-serif; font-size: 14px; font-weight: 600;
+  letter-spacing: .08em; text-transform: uppercase;
+  text-decoration: none;
+  box-shadow: 0 5px 0 rgba(66, 32, 6, .3);
+  transition: all .25s;
+}
+.review-cta-btn:hover { background: var(--pink); transform: translateY(-2px); box-shadow: 0 7px 0 var(--pink-deep) }
 
 /* ===== RECOMMEND SECTION ===== */
 .recommend {
