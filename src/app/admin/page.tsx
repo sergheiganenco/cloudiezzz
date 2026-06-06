@@ -239,7 +239,24 @@ export default function AdminDashboard() {
       }
       fileInput.value = '';
       refreshOrderDetail();
-      showToast('File uploaded.', 'success');
+
+      // After uploading a song, offer to send it to the customer for review.
+      const status = orderDetail?.status;
+      const isSong = uploadFileType === 'draft' || uploadFileType === 'final';
+      if (isSong && ['in_progress', 'revision'].includes(status)) {
+        setConfirmAction({
+          title: 'File uploaded ✓',
+          message: 'The file was uploaded successfully. Send it to the customer for review now? They will get an email with a link to listen.',
+          confirmLabel: 'Send for Review',
+          confirmColor: '#ec4899',
+          onConfirm: () => {
+            setConfirmAction(null);
+            updateStatus(selectedOrder, 'review');
+          },
+        });
+      } else {
+        showToast('File uploaded.', 'success');
+      }
     } catch {
       showToast('File upload failed. Please check your connection.');
     } finally {
