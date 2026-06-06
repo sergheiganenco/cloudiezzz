@@ -241,12 +241,18 @@ function OrderTracking() {
                     <source src={f.url} />
                     Your browser does not support audio playback.
                   </audio>
-                  <a href={f.url} download style={{
-                    display: 'inline-block', marginTop: 10, fontSize: 13,
-                    color: '#ec4899', fontWeight: 600, textDecoration: 'none',
-                  }}>
-                    ⬇ Download {f.type === 'final' ? 'Song' : 'Draft'}
-                  </a>
+                  {f.type === 'final' ? (
+                    <a href={f.url} download style={{
+                      display: 'inline-block', marginTop: 10, fontSize: 13,
+                      color: '#ec4899', fontWeight: 600, textDecoration: 'none',
+                    }}>
+                      ⬇ Download Song
+                    </a>
+                  ) : (
+                    <p style={{ marginTop: 10, fontSize: 12, color: '#8b7e6e' }}>
+                      Preview only — your download unlocks with the final version.
+                    </p>
+                  )}
                 </div>
               ))}
 
@@ -267,8 +273,9 @@ function OrderTracking() {
                 </div>
               ))}
 
-            {/* Other files (stems, lyric cards) */}
+            {/* Other files (stems, lyric cards) — never drafts, which stay preview-only */}
             {order.files
+              .filter((f) => f.type !== 'draft')
               .filter((f) => !['final', 'draft', 'lyric_video'].includes(f.type) || !(f.name.endsWith('.mp3') || f.name.endsWith('.wav') || f.name.endsWith('.m4a') || f.name.endsWith('.ogg')))
               .filter((f) => ['final', 'draft'].includes(f.type) ? !(f.name.endsWith('.mp3') || f.name.endsWith('.wav') || f.name.endsWith('.m4a') || f.name.endsWith('.ogg')) : !['lyric_video'].includes(f.type))
               .map((f, i) => (
