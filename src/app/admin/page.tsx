@@ -306,6 +306,24 @@ export default function AdminDashboard() {
     }
   };
 
+  const resendConfirmation = async (orderId: string) => {
+    try {
+      const res = await fetch('/api/admin/orders/resend-confirmation', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orderId }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        alert('Order confirmation email re-sent to the customer.');
+      } else {
+        alert(data.error || 'Failed to resend confirmation');
+      }
+    } catch {
+      alert('Failed to resend confirmation');
+    }
+  };
+
   const toggleReviewFlag = async (reviewId: string, field: string, value: boolean) => {
     await fetch('/api/admin/reviews', {
       method: 'PATCH',
@@ -791,6 +809,7 @@ export default function AdminDashboard() {
                       refreshOrderDetail();
                     }}
                     onRequestConfirm={setConfirmAction}
+                    onResendConfirmation={() => resendConfirmation(orderDetail.id)}
                   />
                 </div>
               </div>
@@ -1082,17 +1101,19 @@ const WORKFLOW_STEPS: Record<string, { label: string; next: string; color: strin
   cancelled: [],
 };
 
-function WorkflowActions({ status, paymentStatus, hasFiles, onAction, onRequestConfirm }: {
+function WorkflowActions({ status, paymentStatus, hasFiles, onAction, onRequestConfirm, onResendConfirmation }: {
   status: string;
   paymentStatus: string;
   hasFiles: boolean;
   onAction: (newStatus: string) => void;
   onRequestConfirm: (action: { title: string; message: string; confirmLabel: string; confirmColor: string; onConfirm: () => void }) => void;
+  onResendConfirmation: () => void;
 }) {
   const actions = WORKFLOW_STEPS[status] || [];
   const needsFiles = ['review', 'completed'].includes(status) && !hasFiles;
   const canRefund = !['refunded', 'cancelled', 'pending'].includes(status);
   const canCancel = !['refunded', 'cancelled', 'delivered'].includes(status);
+  const canResend = status !== 'cancelled';
 
   const btnStyle = (color: string) => ({
     padding: '10px 20px',
@@ -1136,6 +1157,11 @@ function WorkflowActions({ status, paymentStatus, hasFiles, onAction, onRequestC
             onConfirm: () => { onAction('refunded'); },
           })} style={smallBtnStyle}>
             Refund
+          </button>
+        )}
+        {canResend && (
+          <button onClick={onResendConfirmation} style={smallBtnStyle}>
+            Resend Confirmation
           </button>
         )}
       </div>
@@ -1208,6 +1234,11 @@ function WorkflowActions({ status, paymentStatus, hasFiles, onAction, onRequestC
           onConfirm: () => { onAction('refunded'); },
         })} style={smallBtnStyle}>
           Refund
+        </button>
+      )}
+      {canResend && (
+        <button onClick={onResendConfirmation} style={smallBtnStyle}>
+          Resend Confirmation
         </button>
       )}
 
