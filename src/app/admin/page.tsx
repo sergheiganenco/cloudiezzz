@@ -827,6 +827,41 @@ export default function AdminDashboard() {
           <div className="admin-modal-content" onClick={(e) => e.stopPropagation()}>
             <button className="modal-close" onClick={() => setSelectedOrder(null)}>X</button>
             <h2 className="modal-title">{orderDetail.orderNumber}</h2>
+            {(() => {
+              const updates = orderDetail.statusUpdates || [];
+              const latestNote = updates[0]?.note || '';
+              if (orderDetail.status === 'completed' && latestNote.includes('approved the draft')) {
+                return (
+                  <div style={{
+                    background: '#ecfdf5', border: '2px solid #6ee7b7', borderRadius: 12,
+                    padding: '12px 16px', margin: '0 0 16px', color: '#065f46',
+                    fontSize: 14, fontWeight: 600,
+                  }}>
+                    ✅ Customer approved the draft — upload the final song and deliver it.
+                  </div>
+                );
+              }
+              if (orderDetail.status === 'revision' && latestNote.includes('requested changes')) {
+                const msgs = orderDetail.messages || [];
+                const lastCustomerMsg = [...msgs].reverse().find(
+                  (m: { senderType: string }) => m.senderType === 'customer'
+                );
+                return (
+                  <div style={{
+                    background: '#fff7ed', border: '2px solid #fdba74', borderRadius: 12,
+                    padding: '12px 16px', margin: '0 0 16px', color: '#9a3412',
+                  }}>
+                    <p style={{ fontSize: 14, fontWeight: 700, margin: 0 }}>✎ Customer requested changes</p>
+                    {lastCustomerMsg && (
+                      <p style={{ fontSize: 14, fontStyle: 'italic', margin: '6px 0 0' }}>
+                        &ldquo;{lastCustomerMsg.content}&rdquo;
+                      </p>
+                    )}
+                  </div>
+                );
+              }
+              return null;
+            })()}
             <div className="detail-grid">
               <div>
                 <h3 className="detail-title">Buyer</h3>
