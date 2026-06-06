@@ -731,6 +731,7 @@ export default function AdminDashboard() {
                 <div className="detail-body">
                   <p><strong>{orderDetail.buyerName}</strong> ({orderDetail.buyerEmail})</p>
                   {orderDetail.buyerPhone && <p>Phone: {orderDetail.buyerPhone}</p>}
+                  {orderDetail.dueDate && <p>Due date: {orderDetail.dueDate}</p>}
                 </div>
               </div>
               <div>
@@ -739,6 +740,7 @@ export default function AdminDashboard() {
                   <p>{orderDetail.recName || '—'}{orderDetail.recAge ? `, age ${orderDetail.recAge}` : ''}</p>
                   {orderDetail.relationship && <p>Relationship: {orderDetail.relationship}</p>}
                   {orderDetail.occasion && <p>Occasion: {orderDetail.occasion}</p>}
+                  {orderDetail.othersMentioned && <p>Others to mention: {orderDetail.othersMentioned}</p>}
                 </div>
               </div>
               <div style={{ gridColumn: 'span 2' }}>
@@ -759,6 +761,7 @@ export default function AdminDashboard() {
                   {orderDetail.genres && <p>Genres: {JSON.parse(orderDetail.genres).join(', ')}</p>}
                   <p>Language: {orderDetail.language}</p>
                   {orderDetail.vocal && <p>Vocal: {orderDetail.vocal}</p>}
+                  {orderDetail.songReferences && <p>References: {orderDetail.songReferences}</p>}
                 </div>
               </div>
               <div>
@@ -773,6 +776,20 @@ export default function AdminDashboard() {
                   <p><strong>Total: ${(orderDetail.totalPrice / 100).toFixed(2)}</strong></p>
                 </div>
               </div>
+              {(orderDetail.mustInclude || orderDetail.catchphrase || orderDetail.credit || orderDetail.lyricTone || orderDetail.contentRating || orderDetail.approveFirst || orderDetail.anythingElse) && (
+                <div style={{ gridColumn: 'span 2' }}>
+                  <h3 className="detail-title">Lyrics</h3>
+                  <div className="detail-body">
+                    {orderDetail.mustInclude && <p><strong>Must include:</strong> {orderDetail.mustInclude}</p>}
+                    {orderDetail.catchphrase && <p><strong>Catchphrase:</strong> {orderDetail.catchphrase}</p>}
+                    {orderDetail.credit && <p><strong>Credit / from:</strong> {orderDetail.credit}</p>}
+                    {orderDetail.lyricTone && <p><strong>Tone:</strong> {orderDetail.lyricTone}</p>}
+                    {orderDetail.contentRating && <p><strong>Content rating:</strong> {orderDetail.contentRating}</p>}
+                    {orderDetail.approveFirst && <p><strong>Approve lyrics first:</strong> {orderDetail.approveFirst}</p>}
+                    {orderDetail.anythingElse && <p><strong>Anything else:</strong> {orderDetail.anythingElse}</p>}
+                  </div>
+                </div>
+              )}
               <div style={{ gridColumn: 'span 2' }}>
                 <h3 className="detail-title">Creator</h3>
                 <div className="detail-body">
