@@ -20,12 +20,21 @@ async function sendEmail(options: EmailOptions) {
     return;
   }
 
-  await resend.emails.send({
+  const { data, error } = await resend.emails.send({
     from: FROM,
     to: options.to,
     subject: options.subject,
     html: options.html,
   });
+
+  if (error) {
+    console.error(
+      `[EMAIL FAILED] To: ${options.to} | From: ${FROM} | Subject: "${options.subject}" | ${error.name}: ${error.message}`
+    );
+    return;
+  }
+
+  console.log(`[EMAIL SENT] To: ${options.to} | Subject: "${options.subject}" | id: ${data?.id}`);
 }
 
 function wrap(body: string): string {
