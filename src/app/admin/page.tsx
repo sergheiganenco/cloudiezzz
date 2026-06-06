@@ -73,6 +73,8 @@ export default function AdminDashboard() {
   const [sendingMsg, setSendingMsg] = useState(false);
   const [creators, setCreators] = useState<{ id: string; name: string; email: string }[]>([]);
   const [uploadFileType, setUploadFileType] = useState('draft');
+  const [sunoLoading, setSunoLoading] = useState(false);
+  const [sunoData, setSunoData] = useState<{ title: string; style: string; lyrics: string } | null>(null);
   const [uploading, setUploading] = useState(false);
   const [activeTab, setActiveTab] = useState<'orders' | 'leads' | 'reviews'>('orders');
   const [search, setSearch] = useState('');
@@ -178,9 +180,33 @@ export default function AdminDashboard() {
   }, [selectedOrder]);
 
   useEffect(() => {
+    // Reset any generated Suno content when switching orders / closing the modal.
+    setSunoData(null);
     if (!selectedOrder) { setOrderDetail(null); return; }
     refreshOrderDetail();
   }, [selectedOrder, refreshOrderDetail]);
+
+  const generateSuno = async () => {
+    if (!selectedOrder || sunoLoading) return;
+    setSunoLoading(true);
+    try {
+      const res = await fetch('/api/ai/suno', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orderId: selectedOrder }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setSunoData({ title: data.title || '', style: data.style || '', lyrics: data.lyrics || '' });
+      } else {
+        alert(data.error || 'Failed to generate Suno content');
+      }
+    } catch {
+      alert('Failed to generate Suno content');
+    } finally {
+      setSunoLoading(false);
+    }
+  };
 
   const handleFileUpload = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -791,6 +817,32 @@ export default function AdminDashboard() {
                 </div>
               )}
               <div style={{ gridColumn: 'span 2' }}>
+                <h3 className="detail-title">Suno AI</h3>
+                <div className="detail-body">
+                  <p style={{ fontSize: 13, color: '#8b7e6e', margin: '0 0 10px' }}>
+                    Generate a Suno-ready song title, style prompt and tagged lyrics from this order.
+                  </p>
+                  <button
+                    onClick={generateSuno}
+                    disabled={sunoLoading}
+                    style={{
+                      padding: '10px 20px', background: sunoLoading ? '#c4b5fd' : '#7c3aed', color: '#fff',
+                      border: 'none', borderRadius: 12, fontSize: 14, fontWeight: 700,
+                      cursor: sunoLoading ? 'default' : 'pointer', fontFamily: 'Fredoka, sans-serif',
+                    }}
+                  >
+                    {sunoLoading ? 'Generating…' : sunoData ? '✨ Regenerate' : '✨ Generate Suno Prompt'}
+                  </button>
+                  {sunoData && (
+                    <div style={{ marginTop: 14, display: 'flex', flexDirection: 'column', gap: 12 }}>
+                      <SunoField label="Song title" value={sunoData.title} onChange={(v) => setSunoData({ ...sunoData, title: v })} />
+                      <SunoField label="Style of music" value={sunoData.style} onChange={(v) => setSunoData({ ...sunoData, style: v })} />
+                      <SunoField label="Lyrics (Suno-ready)" value={sunoData.lyrics} onChange={(v) => setSunoData({ ...sunoData, lyrics: v })} multiline />
+                    </div>
+                  )}
+                </div>
+              </div>
+              <div style={{ gridColumn: 'span 2' }}>
                 <h3 className="detail-title">Creator</h3>
                 <div className="detail-body">
                   <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -1117,6 +1169,46 @@ const WORKFLOW_STEPS: Record<string, { label: string; next: string; color: strin
   refunded: [],
   cancelled: [],
 };
+
+function SunoField({ label, value, onChange, multiline }: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  multiline?: boolean;
+}) {
+  const fieldStyle = {
+    width: '100%',
+    padding: '8px 12px',
+    borderRadius: 8,
+    border: '1px solid #d1d5db',
+    fontSize: 13,
+    fontFamily: multiline ? 'monospace' : 'Fredoka, sans-serif',
+    boxSizing: 'border-box' as const,
+    resize: 'vertical' as const,
+  };
+  return (
+    <div>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+        <label style={{ fontSize: 12, fontWeight: 600, color: '#6b7280' }}>{label}</label>
+        <button
+          onClick={() => navigator.clipboard?.writeText(value)}
+          style={{
+            padding: '2px 10px', background: 'transparent', color: '#7c3aed',
+            border: '1px solid #ddd6fe', borderRadius: 8, fontSize: 11, fontWeight: 600,
+            cursor: 'pointer', fontFamily: 'Fredoka, sans-serif',
+          }}
+        >
+          Copy
+        </button>
+      </div>
+      {multiline ? (
+        <textarea value={value} onChange={(e) => onChange(e.target.value)} rows={14} style={fieldStyle} />
+      ) : (
+        <input value={value} onChange={(e) => onChange(e.target.value)} style={fieldStyle} />
+      )}
+    </div>
+  );
+}
 
 function WorkflowActions({ status, paymentStatus, hasFiles, onAction, onRequestConfirm, onResendConfirmation }: {
   status: string;
