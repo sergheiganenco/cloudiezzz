@@ -57,6 +57,9 @@ function OrderTracking() {
   const [reviewText, setReviewText] = useState('');
   const [reviewSubmitted, setReviewSubmitted] = useState(false);
   const [reviewSubmitting, setReviewSubmitting] = useState(false);
+  const [revisionMode, setRevisionMode] = useState(false);
+  const [revisionText, setRevisionText] = useState('');
+  const [decisionSubmitting, setDecisionSubmitting] = useState(false);
 
   const justPaid = searchParams.get('paid') === 'true';
   const wasCancelled = searchParams.get('cancelled') === 'true';
@@ -115,6 +118,46 @@ function OrderTracking() {
       // silently fail
     } finally {
       setSending(false);
+    }
+  };
+
+  const submitDecision = async (decision: 'approve' | 'revision') => {
+    if (decisionSubmitting) return;
+    const fb = revisionText.trim();
+    if (decision === 'revision' && !fb) {
+      setRevisionMode(true);
+      return;
+    }
+    setDecisionSubmitting(true);
+    try {
+      const res = await fetch(`/api/order/${token}/review-decision`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ decision, feedback: decision === 'revision' ? fb : undefined }),
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setOrder((prev) =>
+          prev
+            ? {
+                ...prev,
+                status: data.status,
+                messages:
+                  decision === 'revision'
+                    ? [...prev.messages, { from: 'customer', content: fb, date: new Date().toISOString() }]
+                    : prev.messages,
+              }
+            : prev
+        );
+        setRevisionMode(false);
+        setRevisionText('');
+      } else {
+        alert(data.error || 'Something went wrong. Please try again.');
+      }
+    } catch {
+      alert('Something went wrong. Please try again.');
+    } finally {
+      setDecisionSubmitting(false);
     }
   };
 
@@ -255,6 +298,86 @@ function OrderTracking() {
                   )}
                 </div>
               ))}
+
+            {/* Approve / request changes — only while a draft is under review */}
+            {order.status === 'review' && (
+              <div style={{
+                background: '#fff', border: '2px solid #f9a8d4', borderRadius: 16,
+                padding: 20, marginTop: 4, marginBottom: 16,
+              }}>
+                <p style={{ fontSize: 15, fontWeight: 700, color: '#2a2418', margin: '0 0 4px' }}>
+                  How does it sound?
+                </p>
+                <p style={{ fontSize: 13, color: '#8b7e6e', margin: '0 0 14px' }}>
+                  Approve to finish your song, or request changes and we&apos;ll revise it.
+                </p>
+                {!revisionMode ? (
+                  <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                    <button
+                      onClick={() => submitDecision('approve')}
+                      disabled={decisionSubmitting}
+                      style={{
+                        padding: '10px 22px', background: '#10b981', color: '#fff', border: 'none',
+                        borderRadius: 12, fontSize: 14, fontWeight: 700,
+                        cursor: decisionSubmitting ? 'default' : 'pointer',
+                      }}
+                    >
+                      {decisionSubmitting ? 'Submitting…' : '✓ Approve'}
+                    </button>
+                    <button
+                      onClick={() => setRevisionMode(true)}
+                      disabled={decisionSubmitting}
+                      style={{
+                        padding: '10px 22px', background: 'transparent', color: '#ec4899',
+                        border: '2px solid #f9a8d4', borderRadius: 12, fontSize: 14, fontWeight: 700,
+                        cursor: 'pointer',
+                      }}
+                    >
+                      ✎ Request Changes
+                    </button>
+                  </div>
+                ) : (
+                  <div>
+                    <textarea
+                      value={revisionText}
+                      onChange={(e) => setRevisionText(e.target.value)}
+                      placeholder="What would you like us to change? (a lyric, the mood, a name, etc.)"
+                      rows={4}
+                      maxLength={2000}
+                      style={{
+                        width: '100%', padding: '10px 12px', borderRadius: 10,
+                        border: '1px solid #e5d5c8', fontSize: 14, boxSizing: 'border-box',
+                        resize: 'vertical', fontFamily: 'inherit',
+                      }}
+                    />
+                    <div style={{ display: 'flex', gap: 10, marginTop: 10, flexWrap: 'wrap' }}>
+                      <button
+                        onClick={() => submitDecision('revision')}
+                        disabled={decisionSubmitting || !revisionText.trim()}
+                        style={{
+                          padding: '10px 22px', background: !revisionText.trim() ? '#d1d5db' : '#ec4899',
+                          color: '#fff', border: 'none', borderRadius: 12, fontSize: 14, fontWeight: 700,
+                          cursor: !revisionText.trim() || decisionSubmitting ? 'default' : 'pointer',
+                        }}
+                      >
+                        {decisionSubmitting ? 'Sending…' : 'Send Change Request'}
+                      </button>
+                      <button
+                        onClick={() => { setRevisionMode(false); setRevisionText(''); }}
+                        disabled={decisionSubmitting}
+                        style={{
+                          padding: '10px 22px', background: 'transparent', color: '#8b7e6e',
+                          border: '2px solid #e5d5c8', borderRadius: 12, fontSize: 14, fontWeight: 700,
+                          cursor: 'pointer',
+                        }}
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Lyric video */}
             {order.files

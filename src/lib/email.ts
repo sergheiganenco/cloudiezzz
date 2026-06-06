@@ -130,13 +130,14 @@ export async function sendStatusUpdate(order: {
 
   const statusMessages: Record<string, string> = {
     in_progress: 'Your song is now being created! Our songwriter is working on it.',
-    review: 'Your song draft is ready for review. Check it out!',
+    review: 'Your song draft is ready! Listen on your order page, then approve it or request changes — whatever you need.',
     revision: 'We\'re working on your requested revisions.',
     completed: 'Your song is complete and ready for delivery!',
     delivered: 'Your song has been delivered! Check your order page to listen.',
   };
 
   const message = statusMessages[order.newStatus] || `Your order status has been updated to: ${order.newStatus}`;
+  const ctaLabel = order.newStatus === 'review' ? 'Listen & Respond' : 'View Order';
 
   await sendEmail({
     to: order.buyerEmail,
@@ -147,7 +148,7 @@ export async function sendStatusUpdate(order: {
       ${order.note ? `<p style="color:#8b7e6e;font-size:14px;font-style:italic;">"${order.note}"</p>` : ''}
       <div style="text-align:center;margin:24px 0;">
         <a href="${trackUrl}" style="display:inline-block;padding:12px 32px;background:#ec4899;color:#fff;border-radius:10px;text-decoration:none;font-weight:600;font-size:15px;">
-          View Order
+          ${ctaLabel}
         </a>
       </div>
     `),
