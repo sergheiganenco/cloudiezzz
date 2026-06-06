@@ -34,6 +34,7 @@ const initialFormData: CommissionFormData = {
   genre: [],
   language: 'en',
   vocal: '',
+  tempo: '',
   references: '',
   must_include: '',
   catchphrase: '',

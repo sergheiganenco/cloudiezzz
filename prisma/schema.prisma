@@ -89,6 +89,7 @@ model Order {
   genres        String?  // JSON array
   language      String   @default("en")
   vocal         String?
+  tempo         String?
   songReferences String?
 
   // Lyrics

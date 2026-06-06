@@ -898,6 +898,7 @@ export default function AdminDashboard() {
                   {orderDetail.genres && <p>Genres: {JSON.parse(orderDetail.genres).join(', ')}</p>}
                   <p>Language: {orderDetail.language}</p>
                   {orderDetail.vocal && <p>Vocal: {orderDetail.vocal}</p>}
+                  {orderDetail.tempo && <p>Tempo: {orderDetail.tempo}</p>}
                   {orderDetail.songReferences && <p>References: {orderDetail.songReferences}</p>}
                 </div>
               </div>

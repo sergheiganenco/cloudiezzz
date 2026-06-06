@@ -12,6 +12,7 @@ export function buildSongBrief(order: any): string {
     `Genre: ${genres}`,
     `Language: ${order.language || 'en'}`,
     `Vocal: ${order.vocal || 'Not specified'}`,
+    `Tempo: ${order.tempo || 'Not specified'}`,
     '',
     'Story:',
     `- How they met: ${order.howMet || 'Not provided'}`,

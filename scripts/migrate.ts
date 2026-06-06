@@ -22,6 +22,8 @@ const client = createClient({ url, authToken });
 const migrations: string[] = [
   // Add isFeatured column to Review table
   `ALTER TABLE "Review" ADD COLUMN "isFeatured" BOOLEAN NOT NULL DEFAULT false`,
+  // Add tempo column to Order (Sound step)
+  `ALTER TABLE "Order" ADD COLUMN "tempo" TEXT`,
   // Performance indexes on Order
   `CREATE INDEX IF NOT EXISTS "Order_paymentStatus_idx" ON "Order"("paymentStatus")`,
   `CREATE INDEX IF NOT EXISTS "Order_creatorId_status_idx" ON "Order"("creatorId", "status")`,

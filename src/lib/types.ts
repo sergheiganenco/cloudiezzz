@@ -26,6 +26,7 @@ export interface CommissionFormData {
   genre: string[];
   language: string;
   vocal: string;
+  tempo: string;
   references: string;
 
   // Step 5 – Lyrics

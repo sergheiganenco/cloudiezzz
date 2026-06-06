@@ -116,6 +116,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<Commissio
         genres: JSON.stringify(body.genre),
         language: body.language || 'en',
         vocal: body.vocal || null,
+        tempo: body.tempo || null,
         songReferences: body.references || null,
 
         // Lyrics

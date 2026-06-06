@@ -8,9 +8,10 @@ import {
   PACKAGE_TIMES,
   RELATIONSHIPS,
   OCCASION_TYPES,
-  GENRES,
+  GENRE_GROUPS,
   MOODS,
   VOCAL_OPTIONS,
+  TEMPO_OPTIONS,
   LANGUAGES,
   LYRIC_TONES,
   CONTENT_RATINGS,
@@ -551,25 +552,35 @@ function StepSound({ form }: FormProps) {
         </div>
       </div>
 
-      {/* Genre chips */}
+      {/* Genre chips, grouped by family */}
       <div className="row">
         <div className="lbl">
           Genre <span className="req">pick 1 or more</span>
         </div>
-        <div className="chips" data-group="genre">
-          {GENRES.map((genre) => (
-            <span
-              key={genre}
-              className={`chip${form.formData.genre.includes(genre) ? ' selected' : ''}`}
-              onClick={() => {
-                playGenreSound(genre);
-                form.toggleGenre(genre);
-              }}
-            >
-              {genre}
-            </span>
-          ))}
-        </div>
+        {GENRE_GROUPS.map((group) => (
+          <div key={group.label} style={{ marginBottom: 10 }}>
+            <div style={{
+              fontSize: 11, fontWeight: 700, color: '#b5aa9a',
+              textTransform: 'uppercase', letterSpacing: 0.6, margin: '2px 0 6px',
+            }}>
+              {group.label}
+            </div>
+            <div className="chips" data-group="genre">
+              {group.genres.map((genre) => (
+                <span
+                  key={genre}
+                  className={`chip${form.formData.genre.includes(genre) ? ' selected' : ''}`}
+                  onClick={() => {
+                    playGenreSound(genre);
+                    form.toggleGenre(genre);
+                  }}
+                >
+                  {genre}
+                </span>
+              ))}
+            </div>
+          </div>
+        ))}
       </div>
 
       {/* Language + Vocal */}
@@ -597,6 +608,25 @@ function StepSound({ form }: FormProps) {
               </span>
             ))}
           </div>
+        </div>
+      </div>
+
+      {/* Tempo */}
+      <div className="row">
+        <div className="lbl">Tempo <span className="hint">how fast it feels</span></div>
+        <div className="chips" data-group="tempo">
+          {TEMPO_OPTIONS.map((t, i) => (
+            <span
+              key={t}
+              className={`chip${form.formData.tempo === t ? ' selected' : ''}`}
+              onClick={() => {
+                playGroupSound('tempo', i);
+                form.toggleChip('tempo', t);
+              }}
+            >
+              {t}
+            </span>
+          ))}
         </div>
       </div>
 

@@ -64,12 +64,19 @@ export const OCCASION_TYPES = [
   'Brand or business',
 ];
 
-export const GENRES = [
-  'Acoustic / Folk', 'Pop', 'Rock',
-  'Hip-hop / Rap', 'R&B / Soul', 'Country',
-  'Ballad', 'Lullaby', 'Electronic',
-  'Jazz', 'Reggaeton', 'Retro 80s',
+// Genres grouped by family so the (large) list stays scannable in the form.
+export const GENRE_GROUPS: { label: string; genres: string[] }[] = [
+  { label: 'Pop & Rock', genres: ['Pop', 'Rock', 'Indie', 'Punk / Metal', 'Retro 80s'] },
+  { label: 'Acoustic & Country', genres: ['Acoustic / Folk', 'Singer-songwriter', 'Country', 'Ballad'] },
+  { label: 'Hip-hop & R&B', genres: ['Hip-hop / Rap', 'Trap', 'R&B / Soul', 'Funk / Disco'] },
+  { label: 'Electronic', genres: ['Electronic', 'EDM / House', 'Lo-fi'] },
+  { label: 'Latin', genres: ['Reggaeton', 'Latin Pop', 'Salsa', 'Bachata', 'Mariachi / Ranchera', 'Bossa Nova / Sertanejo'] },
+  { label: 'World', genres: ['Afrobeats', 'K-pop', 'J-pop / Anime', 'Bollywood / Desi', 'Reggae', 'Arabic / Middle-Eastern'] },
+  { label: 'Classic & Other', genres: ['Jazz', 'Blues', 'Gospel / Worship', 'Classical / Orchestral', 'Musical / Broadway', 'Lullaby', 'Christmas / Holiday'] },
 ];
+
+// Flat list (kept for any consumer expecting every genre in one array).
+export const GENRES = GENRE_GROUPS.flatMap((g) => g.genres);
 
 export const MOODS: Mood[] = [
   { id: 'heartfelt', label: 'Heartfelt', emoji: '💝', description: 'emotional' },
@@ -78,9 +85,18 @@ export const MOODS: Mood[] = [
   { id: 'romantic', label: 'Romantic', emoji: '🌹', description: 'intimate' },
   { id: 'cinematic', label: 'Cinematic', emoji: '🎬', description: 'epic' },
   { id: 'mellow', label: 'Mellow', emoji: '🌙', description: 'chill' },
+  { id: 'nostalgic', label: 'Nostalgic', emoji: '📼', description: 'wistful' },
+  { id: 'energetic', label: 'Energetic', emoji: '⚡', description: 'high energy' },
+  { id: 'inspirational', label: 'Inspirational', emoji: '🌟', description: 'uplifting' },
+  { id: 'bittersweet', label: 'Bittersweet', emoji: '🥲', description: 'sad & sweet' },
+  { id: 'peaceful', label: 'Peaceful', emoji: '🕊️', description: 'calm' },
+  { id: 'funky', label: 'Funky', emoji: '🕺', description: 'groovy' },
+  { id: 'festive', label: 'Festive', emoji: '🎊', description: 'party' },
 ];
 
-export const VOCAL_OPTIONS = ['Male', 'Female', 'Duet', 'No preference'];
+export const VOCAL_OPTIONS = ['Male', 'Female', 'Duet', 'Choir / Group', "Child's voice", 'Rap vocals', 'Soft / Whisper', 'No preference'];
+
+export const TEMPO_OPTIONS = ['Slow', 'Mid-tempo', 'Upbeat', 'Fast'];
 
 export const LYRIC_TONES = ['Poetic / Metaphorical', 'Direct / Literal', 'Humorous', 'A mix'];
 
