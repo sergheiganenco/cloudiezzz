@@ -19,6 +19,14 @@ export default function Hero() {
           Start Your Song ✿
         </a>
       </div>
+      <div style={{
+        marginTop: 18, display: 'flex', gap: 20, justifyContent: 'center',
+        flexWrap: 'wrap', fontSize: 14, fontWeight: 600, color: '#7a6f5f',
+      }}>
+        <span>✓ Free revisions</span>
+        <span>✓ 7-day money-back guarantee</span>
+        <span>✓ Delivered in ~48h</span>
+      </div>
       <div className="promo">
         <div className="promo-icon">★</div>
         <div className="promo-text">
