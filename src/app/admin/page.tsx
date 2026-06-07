@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { upload } from '@vercel/blob/client';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import SamplesManager from '@/components/admin/SamplesManager';
 
 interface OrderRow {
   id: string;
@@ -77,7 +78,7 @@ export default function AdminDashboard() {
   const [sunoLoading, setSunoLoading] = useState(false);
   const [sunoData, setSunoData] = useState<{ title: string; style: string; lyrics: string } | null>(null);
   const [uploading, setUploading] = useState(false);
-  const [activeTab, setActiveTab] = useState<'orders' | 'leads' | 'reviews'>('orders');
+  const [activeTab, setActiveTab] = useState<'orders' | 'leads' | 'reviews' | 'samples'>('orders');
   const [search, setSearch] = useState('');
   const [searchInput, setSearchInput] = useState('');
   const [dateFrom, setDateFrom] = useState('');
@@ -540,7 +541,7 @@ export default function AdminDashboard() {
 
       {/* Tab Toggle */}
       <div style={{ display: 'flex', gap: 10, padding: '0 40px 16px' }}>
-        {(['orders', 'leads', 'reviews'] as const).map((tab) => (
+        {(['orders', 'leads', 'reviews', 'samples'] as const).map((tab) => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
@@ -682,6 +683,9 @@ export default function AdminDashboard() {
           )}
         </div>
       )}
+
+      {/* Samples Management */}
+      {activeTab === 'samples' && <SamplesManager />}
 
       {/* Search + Date Filter */}
       {activeTab === 'orders' && (
