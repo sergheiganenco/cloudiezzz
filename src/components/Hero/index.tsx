@@ -11,7 +11,7 @@ export default function Hero() {
         <div className="ornament-dot" />
       </div>
       <p className="lede">
-        Six fun questions. The more specific your answers — the people, the places,
+        A few quick questions. The more specific your answers — the people, the places,
         the small things only you know — the more unforgettable your song will be.
       </p>
       <div style={{ marginTop: 32, textAlign: 'center' }}>
