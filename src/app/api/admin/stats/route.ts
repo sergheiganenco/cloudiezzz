@@ -34,6 +34,8 @@ export async function GET() {
     revisionOrders,
     awaitingList,
     reviewList,
+    reviewRequestsPending,
+    reviewRequestList,
   ] = await Promise.all([
     prisma.order.count(),
     prisma.order.count({ where: { status: 'pending' } }),
@@ -84,6 +86,16 @@ export async function GET() {
       take: 25,
       orderBy: { createdAt: 'desc' },
     }),
+    // Delivered orders we've asked for a testimonial but haven't received one.
+    prisma.order.count({
+      where: { status: 'delivered', reviewRequestedAt: { not: null }, review: { is: null } },
+    }),
+    prisma.order.findMany({
+      where: { status: 'delivered', reviewRequestedAt: { not: null }, review: { is: null } },
+      select: { orderNumber: true, buyerName: true },
+      take: 25,
+      orderBy: { createdAt: 'desc' },
+    }),
   ]);
 
   // Build weekly chart data (last 12 weeks)
@@ -126,6 +138,8 @@ export async function GET() {
     revisionOrders,
     awaitingList: awaitingList.map((o: { orderNumber: string; buyerName: string }) => ({ orderNumber: o.orderNumber, name: o.buyerName })),
     reviewList: reviewList.map((o: { orderNumber: string; buyerName: string }) => ({ orderNumber: o.orderNumber, name: o.buyerName })),
+    reviewRequestsPending,
+    reviewRequestList: reviewRequestList.map((o: { orderNumber: string; buyerName: string }) => ({ orderNumber: o.orderNumber, name: o.buyerName })),
     chartData,
   });
 }

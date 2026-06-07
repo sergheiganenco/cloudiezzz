@@ -41,8 +41,10 @@ interface Stats {
   revenueToday: number;
   revenueWeek: number;
   revenueMonth: number;
+  reviewRequestsPending: number;
   awaitingList: { orderNumber: string; name: string }[];
   reviewList: { orderNumber: string; name: string }[];
+  reviewRequestList: { orderNumber: string; name: string }[];
   chartData: { week: string; revenue: number; orders: number }[];
 }
 
@@ -500,8 +502,8 @@ export default function AdminDashboard() {
               className="stat-card"
               style={{ cursor: stats.reviewList?.length ? 'help' : 'default' }}
               title={stats.reviewList?.length
-                ? 'Awaiting review:\n' + stats.reviewList.map((o) => `${o.orderNumber} — ${o.name}`).join('\n')
-                : 'No orders awaiting review'}
+                ? 'Drafts awaiting customer approval:\n' + stats.reviewList.map((o) => `${o.orderNumber} — ${o.name}`).join('\n')
+                : 'No drafts awaiting approval'}
             >
               <div className="stat-value">{stats.reviewOrders}</div>
               <div className="stat-label">In Review</div>
@@ -517,6 +519,16 @@ export default function AdminDashboard() {
             <div className="stat-card">
               <div className="stat-value">{stats.deliveredOrders}</div>
               <div className="stat-label">Delivered</div>
+            </div>
+            <div
+              className="stat-card"
+              style={{ cursor: stats.reviewRequestList?.length ? 'help' : 'default' }}
+              title={stats.reviewRequestList?.length
+                ? 'Asked for a testimonial, not received yet:\n' + stats.reviewRequestList.map((o) => `${o.orderNumber} — ${o.name}`).join('\n')
+                : 'No pending testimonial requests'}
+            >
+              <div className="stat-value">{stats.reviewRequestsPending}</div>
+              <div className="stat-label">Review Requests</div>
             </div>
             <div className="stat-card">
               <div className="stat-value">{stats.cancelledOrders}</div>
