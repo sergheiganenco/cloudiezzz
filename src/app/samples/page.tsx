@@ -132,6 +132,6 @@ const s: Record<string, React.CSSProperties> = {
   duration: { fontSize: 12, color: '#b5aa9a' },
   playingBar: { position: 'absolute' as const, bottom: 0, left: 0, right: 0, height: 3, background: 'linear-gradient(90deg, #ec4899, #f97316)', animation: 'pulse 1s infinite' },
   cta: { textAlign: 'center' as const, marginTop: 48, padding: '40px 20px', background: '#fff', borderRadius: 20 },
-  ctaTitle: { fontFamily: 'Modak, cursive', fontSize: 28, color: '#ec4899', marginBottom: 16 },
+  ctaTitle: { fontFamily: 'Fredoka, sans-serif', fontWeight: 700, fontSize: 26, color: '#be185d', marginBottom: 16 },
   ctaBtn: { display: 'inline-block', padding: '14px 36px', background: '#ec4899', color: '#fff', borderRadius: 12, textDecoration: 'none', fontWeight: 600, fontSize: 16 },
 };
