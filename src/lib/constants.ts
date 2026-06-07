@@ -5,8 +5,7 @@ export const STEPS = [
   { id: 2, label: 'Recipient' },
   { id: 3, label: 'Story' },
   { id: 4, label: 'Sound' },
-  { id: 5, label: 'Lyrics' },
-  { id: 6, label: 'Review' },
+  { id: 5, label: 'Review' },
 ];
 
 export const PACKAGES: Package[] = [

@@ -48,7 +48,9 @@ const initialFormData: CommissionFormData = {
   discountPercent: COUPONS[DEFAULT_COUPON]?.discount ? COUPONS[DEFAULT_COUPON].discount * 100 : 0,
 };
 
-const STORAGE_KEY = 'cloudiezzz_draft';
+// Bumped to _v2 when the form went from 6 steps to 5 — invalidates old drafts
+// whose saved step number no longer maps to the same screen.
+const STORAGE_KEY = 'cloudiezzz_draft_v2';
 
 function saveDraft(step: number, data: CommissionFormData) {
   try {
@@ -89,15 +91,15 @@ export function useCommissionForm() {
   useEffect(() => {
     setOrderNo(generateOrderId());
     const draft = loadDraft();
-    if (draft && draft.step >= 1 && draft.step <= 6) {
+    if (draft && draft.step >= 1 && draft.step <= 5) {
       setFormData(draft.data);
       setStep(draft.step);
     }
   }, []);
 
-  // Auto-save on changes (steps 1-6 only, not after submission)
+  // Auto-save on changes (form steps 1-5 only, not the completion screen)
   useEffect(() => {
-    if (step >= 1 && step <= 6) {
+    if (step >= 1 && step <= 5) {
       saveDraft(step, formData);
     }
   }, [step, formData]);
@@ -112,7 +114,7 @@ export function useCommissionForm() {
       !!formData.memories.trim() ||
       formData.genre.length > 0;
 
-    if (accessToken || step > 6 || !hasProgress) return;
+    if (accessToken || step > 5 || !hasProgress) return;
 
     const handler = (e: BeforeUnloadEvent) => {
       e.preventDefault();
@@ -127,7 +129,7 @@ export function useCommissionForm() {
   useEffect(() => {
     const email = formData.buyer_email?.trim();
     if (!email || !email.includes('@') || !email.includes('.')) return;
-    if (step < 1 || step >= 7) return;
+    if (step < 1 || step >= 6) return;
     if (email === lastSavedLeadEmail.current) return;
     const timer = setTimeout(() => {
       lastSavedLeadEmail.current = email;
@@ -272,7 +274,7 @@ export function useCommissionForm() {
       return false;
     }
     setErrors([]);
-    setStep((s) => Math.min(s + 1, 7));
+    setStep((s) => Math.min(s + 1, 6));
     return true;
   }, [step, validateStep]);
 
@@ -331,7 +333,7 @@ export function useCommissionForm() {
         }
 
         // If no payment URL (dev mode or Stripe not configured), show completion
-        setStep(7);
+        setStep(6);
       } else {
         setErrors([data.error || 'Something went wrong. Please try again.']);
       }

@@ -66,9 +66,16 @@ export default function CommissionCard() {
             </span>
           ))}
         </div>
+        <div style={{ maxWidth: 320, margin: '10px auto 0', height: 6, background: '#f0e6db', borderRadius: 99, overflow: 'hidden' }}>
+          <div style={{
+            width: `${(Math.min(form.step, STEPS.length) / STEPS.length) * 100}%`,
+            height: '100%', background: '#ec4899', borderRadius: 99, transition: 'width .3s',
+          }} />
+        </div>
         <div className="step-label">
-          Step <strong>{form.step}</strong> of {STEPS.length} &mdash;{' '}
-          {STEPS.find((s) => s.id === form.step)?.label ?? ''}
+          Step <strong>{Math.min(form.step, STEPS.length)}</strong> of {STEPS.length} &mdash;{' '}
+          {STEPS.find((s) => s.id === form.step)?.label ?? 'Done'}
+          {form.step < STEPS.length && <span style={{ color: '#b5aa9a' }}> · about 3 min</span>}
         </div>
       </div>
 
@@ -102,9 +109,8 @@ export default function CommissionCard() {
         {form.step === 2 && <StepRecipient form={form} />}
         {form.step === 3 && <StepStory form={form} />}
         {form.step === 4 && <StepSound form={form} />}
-        {form.step === 5 && <StepLyrics form={form} />}
-        {form.step === 6 && <StepReview form={form} />}
-        {form.step === 7 && <StepComplete form={form} />}
+        {form.step === 5 && <StepReview form={form} />}
+        {form.step === 6 && <StepComplete form={form} />}
 
         {/* Errors */}
         {form.errors.length > 0 && (
@@ -130,7 +136,7 @@ export default function CommissionCard() {
         )}
 
         {/* Navigation */}
-        {form.step < 7 && (
+        {form.step < 6 && (
           <div className="nav">
             {form.step > 1 ? (
               <button
@@ -149,7 +155,7 @@ export default function CommissionCard() {
             {/* Live price display */}
             <LivePrice form={form} />
 
-            {form.step < 6 ? (
+            {form.step < 5 ? (
               <button
                 className="btn primary"
                 onClick={() => {
@@ -451,37 +457,14 @@ function StepStory({ form }: FormProps) {
       <div className="row">
         <label>
           <div className="lbl">
-            Favourite memories together <span className="req">required</span>
+            Favourite memories &amp; what you love about them <span className="req">required</span>
           </div>
           <textarea
-            placeholder="Inside jokes, trips, milestones, everyday moments..."
-            rows={5}
+            placeholder="Inside jokes, trips, milestones, everyday moments — the qualities and little things you love, and the feeling you want the song to capture (joy, nostalgia, laughter...)"
+            rows={6}
             value={form.formData.memories}
             onChange={(e) => form.updateField('memories', e.target.value)}
             {...focusPropsTextarea('memories')}
-          />
-        </label>
-      </div>
-
-      <div className="row two">
-        <label>
-          <div className="lbl">What do you love about them?</div>
-          <textarea
-            placeholder="Qualities, habits, the little things..."
-            rows={3}
-            value={form.formData.love_about}
-            onChange={(e) => form.updateField('love_about', e.target.value)}
-            {...focusPropsTextarea('love_about')}
-          />
-        </label>
-        <label>
-          <div className="lbl">How should the song make them feel?</div>
-          <textarea
-            placeholder="Tearful joy, laughter, nostalgia..."
-            rows={3}
-            value={form.formData.feeling}
-            onChange={(e) => form.updateField('feeling', e.target.value)}
-            {...focusPropsTextarea('feeling')}
           />
         </label>
       </div>
@@ -649,128 +632,7 @@ function StepSound({ form }: FormProps) {
   );
 }
 
-/* ===== Step 5: Lyrics ===== */
-function StepLyrics({ form }: FormProps) {
-  const focusPropsInput = (fieldId: string) => ({
-    onFocus: (e: React.FocusEvent<HTMLInputElement>) => form.trackFocus(fieldId, e.currentTarget),
-    onBlur: () => form.clearFocus(),
-  });
-  const focusPropsTextarea = (fieldId: string) => ({
-    onFocus: (e: React.FocusEvent<HTMLTextAreaElement>) => form.trackFocus(fieldId, e.currentTarget),
-    onBlur: () => form.clearFocus(),
-  });
-
-  return (
-    <div className="step active">
-      <span className="step-num">v. The words</span>
-      <h2>Shape the <em>lyrics</em></h2>
-      <p className="step-intro">
-        Guide the lyricist with phrases, tone, and boundaries.
-      </p>
-
-      <div className="row">
-        <label>
-          <div className="lbl">
-            Words or phrases to include <span className="hint">optional</span>
-          </div>
-          <textarea
-            placeholder="Names, dates, secret phrases, pet names..."
-            rows={4}
-            value={form.formData.must_include}
-            onChange={(e) => form.updateField('must_include', e.target.value)}
-            {...focusPropsTextarea('must_include')}
-          />
-        </label>
-      </div>
-
-      <div className="row two">
-        <label>
-          <div className="lbl">
-            Catchphrase or saying <span className="hint">optional</span>
-          </div>
-          <input
-            type="text"
-            placeholder="Their signature line"
-            value={form.formData.catchphrase}
-            onChange={(e) => form.updateField('catchphrase', e.target.value)}
-            {...focusPropsInput('catchphrase')}
-          />
-        </label>
-        <label>
-          <div className="lbl">
-            Credit / &quot;from&quot; line <span className="hint">optional</span>
-          </div>
-          <input
-            type="text"
-            placeholder="e.g. With love, from James"
-            value={form.formData.credit}
-            onChange={(e) => form.updateField('credit', e.target.value)}
-            {...focusPropsInput('credit')}
-          />
-        </label>
-      </div>
-
-      {/* Lyric tone + Rating */}
-      <div className="row two">
-        <div>
-          <div className="lbl">Lyric tone</div>
-          <div className="chips" data-group="lyric_tone">
-            {LYRIC_TONES.map((tone, i) => (
-              <span
-                key={tone}
-                className={`chip${form.formData.lyric_tone === tone ? ' selected' : ''}`}
-                onClick={() => {
-                  playGroupSound('lyric_tone', i);
-                  form.toggleChip('lyric_tone', tone);
-                }}
-              >
-                {tone}
-              </span>
-            ))}
-          </div>
-        </div>
-        <div>
-          <div className="lbl">Content rating</div>
-          <div className="chips" data-group="rating">
-            {CONTENT_RATINGS.map((r, i) => (
-              <span
-                key={r}
-                className={`chip${form.formData.rating === r ? ' selected' : ''}`}
-                onClick={() => {
-                  playGroupSound('rating', i);
-                  form.toggleChip('rating', r);
-                }}
-              >
-                {r}
-              </span>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* Approval */}
-      <div className="row">
-        <div className="lbl">Lyric approval before recording?</div>
-        <div className="chips" data-group="approve">
-          {APPROVAL_OPTIONS.map((opt, i) => (
-            <span
-              key={opt}
-              className={`chip${form.formData.approve === opt ? ' selected' : ''}`}
-              onClick={() => {
-                playGroupSound('approve', i);
-                form.toggleChip('approve', opt);
-              }}
-            >
-              {opt}
-            </span>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-/* ===== Step 6: Review ===== */
+/* ===== Step 5: Review (with optional lyric fine-tuning folded in) ===== */
 function StepReview({ form }: FormProps) {
   const [couponInput, setCouponInput] = useState(form.formData.couponCode || '');
   const pb = form.priceBreakdown;
@@ -786,7 +648,7 @@ function StepReview({ form }: FormProps) {
 
   return (
     <div className="step active">
-      <span className="step-num">vi. Final touches</span>
+      <span className="step-num">v. Final touches</span>
       <h2>Add-ons &amp; <em>review</em></h2>
       <p className="step-intro">
         Enhance your order and review everything before submitting.
@@ -817,6 +679,93 @@ function StepReview({ form }: FormProps) {
             </div>
           );
         })}
+      </div>
+
+      {/* Optional: fine-tune the lyrics (folded in so it's not a whole step) */}
+      <div className="row">
+        <details style={{ border: '2px solid #f0e6db', borderRadius: 14, padding: '12px 16px', background: '#fffdf9' }}>
+          <summary style={{ cursor: 'pointer', fontWeight: 700, color: '#2a2418', fontSize: 15 }}>
+            ✏️ Fine-tune the lyrics <span className="hint">optional</span>
+          </summary>
+          <div style={{ marginTop: 14 }}>
+            <label>
+              <div className="lbl">Words or phrases to include <span className="hint">optional</span></div>
+              <textarea
+                placeholder="Names, dates, secret phrases, pet names..."
+                rows={3}
+                value={form.formData.must_include}
+                onChange={(e) => form.updateField('must_include', e.target.value)}
+                {...focusPropsTextarea('must_include')}
+              />
+            </label>
+            <div className="row two" style={{ marginTop: 10 }}>
+              <label>
+                <div className="lbl">Catchphrase or saying <span className="hint">optional</span></div>
+                <input
+                  type="text"
+                  placeholder="Their signature line"
+                  value={form.formData.catchphrase}
+                  onChange={(e) => form.updateField('catchphrase', e.target.value)}
+                  {...focusPropsInput('catchphrase')}
+                />
+              </label>
+              <label>
+                <div className="lbl">Credit / &quot;from&quot; line <span className="hint">optional</span></div>
+                <input
+                  type="text"
+                  placeholder="e.g. With love, from James"
+                  value={form.formData.credit}
+                  onChange={(e) => form.updateField('credit', e.target.value)}
+                  {...focusPropsInput('credit')}
+                />
+              </label>
+            </div>
+            <div className="row two" style={{ marginTop: 10 }}>
+              <div>
+                <div className="lbl">Lyric tone</div>
+                <div className="chips" data-group="lyric_tone">
+                  {LYRIC_TONES.map((tone, i) => (
+                    <span
+                      key={tone}
+                      className={`chip${form.formData.lyric_tone === tone ? ' selected' : ''}`}
+                      onClick={() => { playGroupSound('lyric_tone', i); form.toggleChip('lyric_tone', tone); }}
+                    >
+                      {tone}
+                    </span>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <div className="lbl">Content rating</div>
+                <div className="chips" data-group="rating">
+                  {CONTENT_RATINGS.map((r, i) => (
+                    <span
+                      key={r}
+                      className={`chip${form.formData.rating === r ? ' selected' : ''}`}
+                      onClick={() => { playGroupSound('rating', i); form.toggleChip('rating', r); }}
+                    >
+                      {r}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </div>
+            <div style={{ marginTop: 10 }}>
+              <div className="lbl">Lyric approval before recording?</div>
+              <div className="chips" data-group="approve">
+                {APPROVAL_OPTIONS.map((opt, i) => (
+                  <span
+                    key={opt}
+                    className={`chip${form.formData.approve === opt ? ' selected' : ''}`}
+                    onClick={() => { playGroupSound('approve', i); form.toggleChip('approve', opt); }}
+                  >
+                    {opt}
+                  </span>
+                ))}
+              </div>
+            </div>
+          </div>
+        </details>
       </div>
 
       {/* Anything else */}
@@ -916,6 +865,10 @@ function StepReview({ form }: FormProps) {
           dangerouslySetInnerHTML={{ __html: form.buildBrief() }}
         />
       </div>
+
+      <p style={{ textAlign: 'center', fontSize: 13, color: '#7a6f5f', fontWeight: 600, marginTop: 14 }}>
+        🔒 Secure checkout · Free revisions · 7-day money-back guarantee
+      </p>
     </div>
   );
 }
