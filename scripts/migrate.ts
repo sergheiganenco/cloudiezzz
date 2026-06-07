@@ -24,6 +24,8 @@ const migrations: string[] = [
   `ALTER TABLE "Review" ADD COLUMN "isFeatured" BOOLEAN NOT NULL DEFAULT false`,
   // Add tempo column to Order (Sound step)
   `ALTER TABLE "Order" ADD COLUMN "tempo" TEXT`,
+  // Add reviewRequestedAt column to Order (persist the review-request state)
+  `ALTER TABLE "Order" ADD COLUMN "reviewRequestedAt" DATETIME`,
   // Performance indexes on Order
   `CREATE INDEX IF NOT EXISTS "Order_paymentStatus_idx" ON "Order"("paymentStatus")`,
   `CREATE INDEX IF NOT EXISTS "Order_creatorId_status_idx" ON "Order"("creatorId", "status")`,

@@ -105,6 +105,7 @@ model Order {
   deliveredAt   DateTime?
   deliveryUrl   String?  // URL to final song file
   giftPageSlug  String?  @unique // for gift reveal page
+  reviewRequestedAt DateTime? // when the admin sent a review-request email
 
   // Relations
   customerId    String

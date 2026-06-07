@@ -42,6 +42,12 @@ export async function POST(request: NextRequest) {
       recName: order.recName,
     });
 
+    // Persist the requested state so the UI survives a refresh.
+    await prisma.order.update({
+      where: { id: order.id },
+      data: { reviewRequestedAt: new Date() },
+    });
+
     // Log it in status history
     await prisma.orderStatusUpdate.create({
       data: {
