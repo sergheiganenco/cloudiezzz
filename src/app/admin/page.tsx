@@ -26,14 +26,22 @@ interface OrderRow {
 interface Stats {
   totalOrders: number;
   pendingOrders: number;
+  unpaidOrders: number;
   paidOrders: number;
   inProgressOrders: number;
+  reviewOrders: number;
+  revisionOrders: number;
   completedOrders: number;
+  deliveredOrders: number;
+  cancelledOrders: number;
+  refundedOrders: number;
   totalCustomers: number;
   totalRevenue: number;
   revenueToday: number;
   revenueWeek: number;
   revenueMonth: number;
+  awaitingList: { orderNumber: string; name: string }[];
+  reviewList: { orderNumber: string; name: string }[];
   chartData: { week: string; revenue: number; orders: number }[];
 }
 
@@ -469,8 +477,14 @@ export default function AdminDashboard() {
               <div className="stat-value">{stats.totalOrders}</div>
               <div className="stat-label">Total Orders</div>
             </div>
-            <div className="stat-card">
-              <div className="stat-value">{stats.pendingOrders}</div>
+            <div
+              className="stat-card"
+              style={{ cursor: stats.awaitingList?.length ? 'help' : 'default' }}
+              title={stats.awaitingList?.length
+                ? 'Awaiting payment:\n' + stats.awaitingList.map((o) => `${o.orderNumber} — ${o.name}`).join('\n')
+                : 'No unpaid orders'}
+            >
+              <div className="stat-value">{stats.unpaidOrders}</div>
               <div className="stat-label">Awaiting Payment</div>
             </div>
             <div className="stat-card">
@@ -481,9 +495,35 @@ export default function AdminDashboard() {
               <div className="stat-value">{stats.inProgressOrders}</div>
               <div className="stat-label">In Progress</div>
             </div>
+            <div
+              className="stat-card"
+              style={{ cursor: stats.reviewList?.length ? 'help' : 'default' }}
+              title={stats.reviewList?.length
+                ? 'Awaiting review:\n' + stats.reviewList.map((o) => `${o.orderNumber} — ${o.name}`).join('\n')
+                : 'No orders awaiting review'}
+            >
+              <div className="stat-value">{stats.reviewOrders}</div>
+              <div className="stat-label">In Review</div>
+            </div>
+            <div className="stat-card">
+              <div className="stat-value">{stats.revisionOrders}</div>
+              <div className="stat-label">Revision</div>
+            </div>
             <div className="stat-card">
               <div className="stat-value">{stats.completedOrders}</div>
               <div className="stat-label">Completed</div>
+            </div>
+            <div className="stat-card">
+              <div className="stat-value">{stats.deliveredOrders}</div>
+              <div className="stat-label">Delivered</div>
+            </div>
+            <div className="stat-card">
+              <div className="stat-value">{stats.cancelledOrders}</div>
+              <div className="stat-label">Cancelled</div>
+            </div>
+            <div className="stat-card">
+              <div className="stat-value">{stats.refundedOrders}</div>
+              <div className="stat-label">Refunded</div>
             </div>
             <div className="stat-card">
               <div className="stat-value">{stats.totalCustomers}</div>
@@ -1234,7 +1274,11 @@ export default function AdminDashboard() {
                 Cancel
               </button>
               <button
-                onClick={confirmAction.onConfirm}
+                onClick={() => {
+                  const action = confirmAction;
+                  setConfirmAction(null);
+                  action.onConfirm();
+                }}
                 style={{
                   padding: '10px 24px',
                   background: confirmAction.confirmColor,
