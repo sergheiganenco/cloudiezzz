@@ -30,9 +30,9 @@ export default function Hero() {
       <div className="promo">
         <div className="promo-icon">★</div>
         <div className="promo-text">
-          Order now &amp; save <strong>25% off!</strong>
+          Launch offer — <strong>25% off</strong>
           <small>
-            Limited time — use code <strong style={{ fontSize: 18 }}>CLOUD25</strong>
+            Applied automatically with code <strong style={{ fontSize: 18 }}>CLOUD25</strong>
           </small>
         </div>
       </div>
