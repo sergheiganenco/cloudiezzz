@@ -89,6 +89,33 @@ export async function sendOrderConfirmation(order: {
   });
 }
 
+// ─── Order links (find my order) ────────────────────────────────────
+export async function sendOrderLinks(data: {
+  email: string;
+  buyerName: string;
+  orders: { orderNumber: string; accessToken: string }[];
+}) {
+  const items = data.orders
+    .map(
+      (o) =>
+        `<li style="margin:8px 0;"><a href="${APP_URL}/order/${o.accessToken}" style="color:#ec4899;font-weight:600;text-decoration:none;">${o.orderNumber}</a></li>`
+    )
+    .join('');
+
+  await sendEmail({
+    to: data.email,
+    subject: 'Your Cloudiezzz order link' + (data.orders.length > 1 ? 's' : ''),
+    html: wrap(`
+      <h2 style="color:#2a2418;font-size:20px;margin:0 0 16px;">Here ${data.orders.length > 1 ? 'are your orders' : 'is your order'}</h2>
+      <p style="color:#5d5346;font-size:15px;line-height:1.6;">
+        Hi ${data.buyerName || 'there'}, ${data.orders.length > 1 ? 'here are your order links' : 'here is your order link'}:
+      </p>
+      <ul style="color:#5d5346;font-size:15px;padding-left:20px;">${items}</ul>
+      <p style="color:#8b7e6e;font-size:13px;">Bookmark the link to check your order status anytime.</p>
+    `),
+  });
+}
+
 // ─── Payment confirmation ───────────────────────────────────────────
 export async function sendPaymentConfirmation(order: {
   buyerEmail: string;
