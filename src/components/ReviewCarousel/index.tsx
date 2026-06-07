@@ -3,7 +3,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import useEmblaCarousel from 'embla-carousel-react';
 import Autoplay from 'embla-carousel-autoplay';
-import { REVIEWS } from '@/lib/constants';
 
 interface ReviewItem {
   id: string;
@@ -43,39 +42,30 @@ export default function ReviewCarousel() {
   }, [emblaApi, onSelect]);
 
   useEffect(() => {
-    fetch('/api/reviews?featured=true&limit=10')
-      .then((r) => r.json())
-      .then((d) => {
-        if (d.reviews && d.reviews.length > 0) {
-          setReviews(d.reviews);
-        } else {
-          // Fall back to hardcoded reviews if no featured reviews yet
-          setReviews(
-            REVIEWS.map((r) => ({
-              id: r.id,
-              author: r.author,
-              rating: r.rating,
-              content: r.quote,
-              occasion: r.occasion,
-              date: r.date,
-            }))
-          );
+    let cancelled = false;
+    const load = async () => {
+      try {
+        // Prefer featured reviews; if none are featured yet, show recent
+        // approved reviews. Never fall back to hardcoded/sample data.
+        let res = await fetch('/api/reviews?featured=true&limit=10').then((r) => r.json());
+        let list: ReviewItem[] = res.reviews || [];
+        if (list.length === 0) {
+          res = await fetch('/api/reviews?limit=10').then((r) => r.json());
+          list = res.reviews || [];
         }
-        setLoaded(true);
-      })
-      .catch(() => {
-        setReviews(
-          REVIEWS.map((r) => ({
-            id: r.id,
-            author: r.author,
-            rating: r.rating,
-            content: r.quote,
-            occasion: r.occasion,
-            date: r.date,
-          }))
-        );
-        setLoaded(true);
-      });
+        if (!cancelled) {
+          setReviews(list);
+          setLoaded(true);
+        }
+      } catch {
+        if (!cancelled) {
+          setReviews([]);
+          setLoaded(true);
+        }
+      }
+    };
+    load();
+    return () => { cancelled = true; };
   }, []);
 
   if (!loaded) {
@@ -103,6 +93,9 @@ export default function ReviewCarousel() {
       </section>
     );
   }
+
+  // No real reviews yet — hide the whole section rather than show samples.
+  if (reviews.length === 0) return null;
 
   return (
     <section className="review-carousel-section" id="reviews">
